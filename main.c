@@ -1,4 +1,5 @@
-#include<windows.h>
+#include <windows.h>
+#include "hook.h"
 
 void hide_taskbar(void);
 void create_window(HINSTANCE);

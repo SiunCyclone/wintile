@@ -1,9 +1,9 @@
-#include <windows.h>
 #define DLLAPI __declspec(dllexport)
 
-#pragma data_seg(".sharedseg")
-HHOOK hhk = 0;
-#pragma data_seg()
+#include <windows.h>
+#include "hook.h"
+
+__attribute__ ((section(".hookseg"))) HHOOK hhk = 0;
 
 HINSTANCE hInst;
 
