@@ -11,7 +11,7 @@ main: main.o hook.dll
 hook.dll: hookdll.o
 	$(CC) -shared $< -o $@
 
-%.o: %.cc
+%.o: %.cc hook.h
 	$(CC) $(CFLAGS) -c $< -std=c++11
 
 .PHONY: clean

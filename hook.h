@@ -1,4 +1,4 @@
-#define DLLAPI __attribute__((visibility("default")))
+#define DLLAPI extern "C" __attribute__((visibility("default")))
 
 #include <windows.h>
 
