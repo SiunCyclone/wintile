@@ -1,7 +1,7 @@
-#ifndef DLLAPI
-#define DLLAPI __declspec(dllimport)
-#endif
+#define DLLAPI __attribute__((visibility("default")))
+
+#include <windows.h>
 
 DLLAPI BOOL start_hook(HWND);
-DLLAPI BOOL stop_hook(void);
+DLLAPI BOOL stop_hook();
 

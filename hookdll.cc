@@ -1,5 +1,3 @@
-#define DLLAPI __declspec(dllexport)
-
 #include <windows.h>
 #include "hook.h"
 
@@ -29,13 +27,13 @@ LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 DLLAPI BOOL start_hook(HWND hWnd) {
   hhk = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, hInst, 0);
 
-  if (hhk == NULL)
+  if (hhk == nullptr)
     return FALSE;
 
   return TRUE;
 }
 
-DLLAPI BOOL stop_hook(void) {
+DLLAPI BOOL stop_hook() {
   if (UnhookWindowsHookEx(hhk) == 0)
     return FALSE;
 

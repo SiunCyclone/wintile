@@ -1,18 +1,18 @@
-CC = gcc
+CC = g++
 CFLAGS = -Wall
 TARGETS = main hook.dll
 
 .PHONY: all
 all: $(TARGETS)
 
-main: main.o hook.h
-	$(CC) $< -o $@
+main: main.o hook.dll
+	$(CC) $< -o $@ -L./ -lhook
 
-hook.dll: hookdll.o hook.h
+hook.dll: hookdll.o
 	$(CC) -shared $< -o $@
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $<
+%.o: %.cc
+	$(CC) $(CFLAGS) -c $< -std=c++11
 
 .PHONY: clean
 clean:
