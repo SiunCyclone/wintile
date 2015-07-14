@@ -16,7 +16,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PostQuitMessage(0);
       break;
     case WM_KEYDOWN:
-      PostQuitMessage(0);
+      if (wParam == VK_NONCONVERT) {
+        MessageBox(nullptr, TEXT("WM_KEYDOWN called"), nullptr, MB_OK);
+      }
       break;
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
