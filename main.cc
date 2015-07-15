@@ -1,9 +1,13 @@
 #include <windows.h>
-#include "hook.h"
+
+HHOOK hhk;
+HWND hClientWnd;
 
 void hide_taskbar();
 void create_window(HINSTANCE);
 void setup(HINSTANCE);
+BOOL start_hook(HINSTANCE, HWND);
+BOOL stop_hook();
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   CHAR str[128];
@@ -32,6 +36,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
   return 0;
+}
+
+LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
+  if (code < 0)
+    return CallNextHookEx(hhk, code, wParam, lParam);
+
+  if (code == HC_ACTION)
+    PostMessage(hClientWnd, WM_KEYDOWN, wParam, lParam);
+
+  return CallNextHookEx(hhk, code, wParam, lParam);
+}
+
+BOOL start_hook(HINSTANCE hInst, HWND hWnd) {
+  hhk = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hInst, 0);
+  hClientWnd = hWnd;
+
+  if (hhk == nullptr) {
+    MessageBox(nullptr, TEXT("Error in start_hook() : hhk is nullptr"), nullptr, MB_OK);
+    return FALSE;
+  }
+
+  MessageBox(nullptr, TEXT("start_hook"), nullptr, MB_OK);
+  return TRUE;
+}
+
+BOOL stop_hook() {
+  if (UnhookWindowsHookEx(hhk) == 0) {
+    MessageBox(nullptr, TEXT("Error in stop_hook()"), nullptr, MB_OK);
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 void hide_taskbar() {
@@ -73,7 +109,7 @@ void create_window(HINSTANCE hInstance) {
   if (hWtWnd == nullptr)
     return;
 
-  start_hook(hWtWnd);
+  start_hook(hInstance, hWtWnd);
 
   RegisterHotKey(hWtWnd, 0, MOD_CONTROL, 'Q');
 }
