@@ -29,7 +29,7 @@ LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 }
 
 DLLAPI BOOL start_hook(HWND hWnd) {
-  hhk = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, hInst, 0);
+  hhk = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hInst, 0);
   hClientWnd = hWnd;
 
   if (hhk == nullptr) {

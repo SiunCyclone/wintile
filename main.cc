@@ -6,6 +6,8 @@ void create_window(HINSTANCE);
 void setup(HINSTANCE);
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  CHAR str[128];
+
   switch (msg) {
     case WM_CREATE:
       break;
@@ -16,9 +18,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PostQuitMessage(0);
       break;
     case WM_KEYDOWN:
+      if (wParam != VK_RETURN) {
+        wsprintf(str, "%x", wParam);
+        MessageBox(nullptr, str, nullptr, MB_OK);
+      }
+      /*
       if (wParam == VK_NONCONVERT) {
         MessageBox(nullptr, TEXT("WM_KEYDOWN called"), nullptr, MB_OK);
       }
+      */
       break;
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
