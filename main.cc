@@ -1,7 +1,9 @@
+#include <iostream>
 #include <windows.h>
 
 HHOOK hhk;
 HWND hClientWnd;
+BOOL modIsPressed = false;
 
 void hide_taskbar();
 void create_window(HINSTANCE);
@@ -10,8 +12,6 @@ BOOL start_hook(HINSTANCE, HWND);
 BOOL stop_hook();
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  CHAR str[128];
-
   switch (msg) {
     case WM_CREATE:
       break;
@@ -21,35 +21,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_HOTKEY:
       PostQuitMessage(0);
       break;
-    case WM_KEYDOWN:
-      if (wParam != VK_RETURN) {
-        wsprintf(str, "%x", wParam);
-        MessageBox(nullptr, str, nullptr, MB_OK);
-      }
-      /*
-      if (wParam == VK_NONCONVERT) {
-        MessageBox(nullptr, TEXT("WM_KEYDOWN called"), nullptr, MB_OK);
-      }
-      */
+    case WM_KEYDOWN: {
+      std::cout << wParam << std::endl;
+
       break;
+    }
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
   return 0;
 }
 
-LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
     return CallNextHookEx(hhk, code, wParam, lParam);
 
-  if (code == HC_ACTION)
-    PostMessage(hClientWnd, WM_KEYDOWN, wParam, lParam);
+  if (code == HC_ACTION) {
+    KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
+    DWORD vkCode = tmp->vkCode;
+
+    if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
+      if (vkCode == VK_NONCONVERT) {
+        if (!modIsPressed)
+          modIsPressed = true;
+
+        return CallNextHookEx(hhk, code, wParam, lParam);
+      } else if (modIsPressed) {
+        PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
+      }
+    }
+
+    if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
+      if (vkCode == VK_NONCONVERT) {
+        modIsPressed = false;
+        return CallNextHookEx(hhk, code, wParam, lParam);
+      }
+    }
+  }
 
   return CallNextHookEx(hhk, code, wParam, lParam);
 }
 
 BOOL start_hook(HINSTANCE hInst, HWND hWnd) {
-  hhk = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hInst, 0);
+  hhk = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
   hClientWnd = hWnd;
 
   if (hhk == nullptr) {
@@ -57,7 +71,6 @@ BOOL start_hook(HINSTANCE hInst, HWND hWnd) {
     return FALSE;
   }
 
-  MessageBox(nullptr, TEXT("start_hook"), nullptr, MB_OK);
   return TRUE;
 }
 
@@ -103,7 +116,6 @@ void create_window(HINSTANCE hInstance) {
   if (RegisterClassEx(&wcex) == 0)
     return;
 
-  // Create window
   HWND hWtWnd = CreateWindowEx(0, TEXT("wintile"), TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
 
   if (hWtWnd == nullptr)
