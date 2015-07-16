@@ -40,23 +40,13 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
     DWORD vkCode = tmp->vkCode;
 
-    if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-      if (vkCode == VK_NONCONVERT) {
-        if (!modIsPressed)
-          modIsPressed = true;
+    BOOL isKeyDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
 
-        return CallNextHookEx(hhk, code, wParam, lParam);
-      } else if (modIsPressed) {
-        PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
-      }
-    }
-
-    if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
-      if (vkCode == VK_NONCONVERT) {
-        modIsPressed = false;
-        return CallNextHookEx(hhk, code, wParam, lParam);
-      }
-    }
+    if (vkCode == VK_NONCONVERT) {
+      modIsPressed = isKeyDown;
+      return CallNextHookEx(hhk, code, wParam, lParam);
+    } else if (modIsPressed && isKeyDown)
+      PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
   }
 
   return CallNextHookEx(hhk, code, wParam, lParam);
