@@ -23,7 +23,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       break;
     case WM_KEYDOWN: {
       std::cout << wParam << std::endl;
-
       break;
     }
     default:
@@ -40,7 +39,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
     DWORD vkCode = tmp->vkCode;
 
-    BOOL isKeyDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
+    BOOL isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
     if (vkCode == VK_NONCONVERT) {
       modIsPressed = isKeyDown;

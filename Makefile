@@ -1,11 +1,11 @@
 CC = g++
 CFLAGS = -Wall
-TARGETS = main
+TARGETS = wintile
 
 .PHONY: all
 all: $(TARGETS)
 
-main: main.o
+wintile: wintile.o
 	$(CC) $< -o $@
 
 %.o: %.cc
