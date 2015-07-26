@@ -4,6 +4,8 @@
 #include <functional>
 #include <windows.h>
 
+#define MODKEY VK_NONCONVERT
+
 template <class T>
 void print(T str) {
   std::cout << str << std::endl;
@@ -21,7 +23,6 @@ void quit();
 
 HHOOK hhk;
 HWND hClientWnd;
-static unsigned int modKey = VK_NONCONVERT;
 static std::map<std::string, bool> isPressed = {
   { "MOD",    false },
   { "SHIFT",  false },
@@ -82,7 +83,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
       return CallNextHookEx(hhk, code, wParam, lParam);
     };
 
-    if (vkCode == modKey)
+    if (vkCode == MODKEY)
       switch_flag("MOD");
     switch (vkCode) {
       case VK_SHIFT:
