@@ -21,17 +21,13 @@ void quit();
 
 HHOOK hhk;
 HWND hClientWnd;
-static bool modIsPressed = false;
-static bool shiftIsPressed = false;
-/*
-static std::map<string, unsigned int> isPressed = {
-  { "MOD",    VK_NONCONVERT },
-  { "SHIFT",  VK_SHIFT      },
-  { "CTRL",   VK_CTRL       },
-  { "ALT",    VK_ALT        },
-};
-*/
 static unsigned int modKey = VK_NONCONVERT;
+static std::map<std::string, bool> isPressed = {
+  { "MOD",    false },
+  { "SHIFT",  false },
+  { "CTRL",   false },
+  { "ALT",    false },
+};
 static std::map<unsigned int, std::function<void()>> callFunc = {
   {            'J',  move_focus(1)   },
   {            'K',  move_focus(-1)  },
@@ -81,17 +77,28 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     DWORD vkCode = tmp->vkCode;
     bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
-    static auto switch_flag = [&](bool* flag) {
-      *flag = isKeyDown;
+    static auto switch_flag = [&](std::string name) {
+      isPressed[name] = isKeyDown;
       return CallNextHookEx(hhk, code, wParam, lParam);
     };
 
     if (vkCode == modKey)
-      switch_flag(&modIsPressed);
-    else if (vkCode == VK_SHIFT)
-      switch_flag(&shiftIsPressed);
+      switch_flag("MOD");
+    switch (vkCode) {
+      case VK_SHIFT:
+        switch_flag("SHIFT");
+        break;
+      case VK_CONTROL:
+        switch_flag("CTRL");
+        break;
+      case VK_MENU:
+        switch_flag("ALT");
+        break;
+      default:
+        break;
+    }
 
-    if (modIsPressed && isKeyDown && callFunc.count(vkCode) == 1)
+    if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1)
       PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
   }
 
