@@ -1,7 +1,13 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <functional>
 #include <windows.h>
+
+template <class T>
+void print(T str) {
+  std::cout << str << std::endl;
+}
 
 BOOL start_hook(HINSTANCE, HWND);
 BOOL stop_hook();
@@ -9,30 +15,54 @@ void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
 void setup(HINSTANCE);
-
+std::function<void()> move_focus(int);
+std::function<void()> move_window(int);
 void quit();
 
 HHOOK hhk;
 HWND hClientWnd;
-BOOL modIsPressed = false;
-
-std::map<unsigned int, void (*)()> callFunc = {
-  {'Q', quit}
+static BOOL modIsPressed = false;
+static BOOL shiftIsPressed = false;
+/*
+static std::map<string, unsigned int> isPressed = {
+  { "MOD",    VK_NONCONVERT },
+  { "SHIFT",  VK_SHIFT      },
+  { "CTRL",   VK_CTRL       },
+  { "ALT",    VK_ALT        },
+};
+*/
+static unsigned int modKey = VK_NONCONVERT;
+static std::map<unsigned int, std::function<void()>> callFunc = {
+  {            'J',  move_focus(1)   },
+  {            'K',  move_focus(-1)  },
+  { VK_SHIFT + 'J',  move_window(1)  },
+  { VK_SHIFT + 'K',  move_window(-1) },
+  {            'Q',  quit            }
 };
 
+std::function<void()> move_focus(int value) {
+  return [=] {
+    std::cout << value << std::endl;
+  };
+};
+
+std::function<void()> move_window(int value) {
+  return [=] {
+    std::cout << value << std::endl;
+  };
+}
+
 void quit() {
-  std::cout << "called quit()" << std::endl;
   PostQuitMessage(0);
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
-    case WM_CREATE:
-      break;
     case WM_DESTROY:
       PostQuitMessage(0);
       break;
     case WM_KEYDOWN: {
+      std::cout << "called WM_KEYDOWN" << std::endl;
       callFunc[wParam]();
       break;
     }
@@ -51,10 +81,17 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     DWORD vkCode = tmp->vkCode;
     BOOL isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
-    if (vkCode == VK_NONCONVERT) {
-      modIsPressed = isKeyDown;
+    static auto switch_flag = [&](BOOL* flag) {
+      *flag = isKeyDown;
       return CallNextHookEx(hhk, code, wParam, lParam);
-    } else if (modIsPressed && isKeyDown && callFunc.count(vkCode) == 1)
+    };
+
+    if (vkCode == modKey)
+      switch_flag(&modIsPressed);
+    else if (vkCode == VK_SHIFT)
+      switch_flag(&shiftIsPressed);
+
+    if (modIsPressed && isKeyDown && callFunc.count(vkCode) == 1)
       PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
   }
 
@@ -140,6 +177,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   stop_hook();
+  show_taskbar();
 
   return msg.wParam;
 }

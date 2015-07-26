@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall
+CFLAGS = -Wall -std=c++11
 TARGETS = wintile
 
 .PHONY: all
@@ -9,7 +9,7 @@ wintile: wintile.o
 	$(CC) $< -o $@
 
 %.o: %.cc
-	$(CC) $(CFLAGS) -c $< -std=c++11
+	$(CC) $(CFLAGS) -c $<
 
 .PHONY: clean
 clean:
