@@ -109,19 +109,19 @@ bool start_hook(HINSTANCE hInst, HWND hWnd) {
 
   if (hhk == nullptr) {
     MessageBox(nullptr, TEXT("Error in start_hook() : hhk is nullptr"), nullptr, MB_OK);
-    return FALSE;
+    return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 bool stop_hook() {
   if (UnhookWindowsHookEx(hhk) == 0) {
     MessageBox(nullptr, TEXT("Error in stop_hook()"), nullptr, MB_OK);
-    return FALSE;
+    return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 void show_taskbar() {
