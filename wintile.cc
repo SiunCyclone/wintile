@@ -4,7 +4,8 @@
 #include <functional>
 #include <windows.h>
 
-#define MODKEY VK_NONCONVERT
+#define MODKEY    VK_NONCONVERT
+#define SUBMODKEY VK_LSHIFT
 
 template <class T>
 void print(T str) {
@@ -19,34 +20,45 @@ void create_window(HINSTANCE);
 void setup(HINSTANCE);
 std::function<void()> move_focus(int);
 std::function<void()> move_window(int);
+void maximize();
+void close_window();
 void quit();
 
 HHOOK hhk;
 HWND hClientWnd;
 static std::map<std::string, bool> isPressed = {
-  { "MOD",    false },
-  { "SHIFT",  false },
-  { "CTRL",   false },
-  { "ALT",    false },
+  { "MOD",     false },
+  { "SUBMOD",  false }
 };
 static std::map<unsigned int, std::function<void()>> callFunc = {
-  {            'J',  move_focus(1)   },
-  {            'K',  move_focus(-1)  },
-  { VK_SHIFT + 'J',  move_window(1)  },
-  { VK_SHIFT + 'K',  move_window(-1) },
-  {            'Q',  quit            }
+  {             'J',  move_focus(1)   },
+  {             'K',  move_focus(-1)  },
+  { SUBMODKEY + 'J',  move_window(2)  },
+  { SUBMODKEY + 'K',  move_window(-2) },
+  {             'M',  maximize        },
+  { SUBMODKEY + 'D',  close_window    },
+  {             'Q',  quit            }
 };
 
 std::function<void()> move_focus(int value) {
   return [=] {
-    std::cout << value << std::endl;
+    print(value);
   };
 };
 
 std::function<void()> move_window(int value) {
   return [=] {
-    std::cout << value << std::endl;
+    print("move_window");
+    print(value);
   };
+}
+
+void maximize() {
+
+}
+
+void close_window() {
+
 }
 
 void quit() {
@@ -55,11 +67,7 @@ void quit() {
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      break;
     case WM_KEYDOWN: {
-      std::cout << "called WM_KEYDOWN" << std::endl;
       callFunc[wParam]();
       break;
     }
@@ -85,22 +93,11 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 
     if (vkCode == MODKEY)
       switch_flag("MOD");
-    switch (vkCode) {
-      case VK_SHIFT:
-        switch_flag("SHIFT");
-        break;
-      case VK_CONTROL:
-        switch_flag("CTRL");
-        break;
-      case VK_MENU:
-        switch_flag("ALT");
-        break;
-      default:
-        break;
-    }
+    else if (vkCode == SUBMODKEY)
+      switch_flag("SUBMOD");
 
     if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1)
-      PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
+      PostMessage(hClientWnd, WM_KEYDOWN, vkCode + (isPressed["SUBMOD"] ? SUBMODKEY : 0), lParam);
   }
 
   return CallNextHookEx(hhk, code, wParam, lParam);
