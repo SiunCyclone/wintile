@@ -9,8 +9,8 @@ void print(T str) {
   std::cout << str << std::endl;
 }
 
-BOOL start_hook(HINSTANCE, HWND);
-BOOL stop_hook();
+bool start_hook(HINSTANCE, HWND);
+bool stop_hook();
 void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
@@ -21,8 +21,8 @@ void quit();
 
 HHOOK hhk;
 HWND hClientWnd;
-static BOOL modIsPressed = false;
-static BOOL shiftIsPressed = false;
+static bool modIsPressed = false;
+static bool shiftIsPressed = false;
 /*
 static std::map<string, unsigned int> isPressed = {
   { "MOD",    VK_NONCONVERT },
@@ -79,9 +79,9 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code == HC_ACTION) {
     KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
     DWORD vkCode = tmp->vkCode;
-    BOOL isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
+    bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
-    static auto switch_flag = [&](BOOL* flag) {
+    static auto switch_flag = [&](bool* flag) {
       *flag = isKeyDown;
       return CallNextHookEx(hhk, code, wParam, lParam);
     };
@@ -98,7 +98,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(hhk, code, wParam, lParam);
 }
 
-BOOL start_hook(HINSTANCE hInst, HWND hWnd) {
+bool start_hook(HINSTANCE hInst, HWND hWnd) {
   hhk = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
   hClientWnd = hWnd;
 
@@ -110,7 +110,7 @@ BOOL start_hook(HINSTANCE hInst, HWND hWnd) {
   return TRUE;
 }
 
-BOOL stop_hook() {
+bool stop_hook() {
   if (UnhookWindowsHookEx(hhk) == 0) {
     MessageBox(nullptr, TEXT("Error in stop_hook()"), nullptr, MB_OK);
     return FALSE;
