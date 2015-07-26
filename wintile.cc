@@ -1,15 +1,29 @@
 #include <iostream>
+#include <string>
+#include <map>
 #include <windows.h>
+
+BOOL start_hook(HINSTANCE, HWND);
+BOOL stop_hook();
+void show_taskbar();
+void hide_taskbar();
+void create_window(HINSTANCE);
+void setup(HINSTANCE);
+
+void quit();
 
 HHOOK hhk;
 HWND hClientWnd;
 BOOL modIsPressed = false;
 
-void hide_taskbar();
-void create_window(HINSTANCE);
-void setup(HINSTANCE);
-BOOL start_hook(HINSTANCE, HWND);
-BOOL stop_hook();
+std::map<unsigned int, void (*)()> callFunc = {
+  {'Q', quit}
+};
+
+void quit() {
+  std::cout << "called quit()" << std::endl;
+  PostQuitMessage(0);
+}
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
@@ -18,11 +32,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_DESTROY:
       PostQuitMessage(0);
       break;
-    case WM_HOTKEY:
-      PostQuitMessage(0);
-      break;
     case WM_KEYDOWN: {
-      std::cout << wParam << std::endl;
+      callFunc[wParam]();
       break;
     }
     default:
@@ -38,13 +49,12 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code == HC_ACTION) {
     KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
     DWORD vkCode = tmp->vkCode;
-
     BOOL isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
     if (vkCode == VK_NONCONVERT) {
       modIsPressed = isKeyDown;
       return CallNextHookEx(hhk, code, wParam, lParam);
-    } else if (modIsPressed && isKeyDown)
+    } else if (modIsPressed && isKeyDown && callFunc.count(vkCode) == 1)
       PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
   }
 
@@ -72,18 +82,18 @@ BOOL stop_hook() {
   return TRUE;
 }
 
-void hide_taskbar() {
-  HWND hTaskBar = FindWindow(TEXT("Shell_TrayWnd"), nullptr);
-  HWND hStart = FindWindow(TEXT("Button"), nullptr);
-  ShowWindow(hTaskBar, SW_HIDE);
-  ShowWindow(hStart, SW_HIDE);
-}
-
 void show_taskbar() {
   HWND hTaskBar = FindWindow(TEXT("Shell_TrayWnd"), nullptr);
   HWND hStart = FindWindow(TEXT("Button"), nullptr);
   ShowWindow(hTaskBar, SW_SHOW);
   ShowWindow(hStart, SW_SHOW);
+}
+
+void hide_taskbar() {
+  HWND hTaskBar = FindWindow(TEXT("Shell_TrayWnd"), nullptr);
+  HWND hStart = FindWindow(TEXT("Button"), nullptr);
+  ShowWindow(hTaskBar, SW_HIDE);
+  ShowWindow(hStart, SW_HIDE);
 }
 
 void create_window(HINSTANCE hInstance) {
@@ -111,8 +121,6 @@ void create_window(HINSTANCE hInstance) {
     return;
 
   start_hook(hInstance, hWtWnd);
-
-  RegisterHotKey(hWtWnd, 0, MOD_CONTROL, 'Q');
 }
 
 void setup(HINSTANCE hInstance) {
