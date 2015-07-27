@@ -34,16 +34,16 @@ static std::map<std::string, bool> isPressed = {
   { "SUBMOD",  false }
 };
 static std::map<unsigned int, stdfunc> callFunc = {
-  { 'J',  func_switcher( move_window(2),   move_focus(1)  )},
-  { 'K',  func_switcher( move_window(-2),  move_focus(-1) )},
-  { 'M',                                   maximize        },
-  { 'D',  func_switcher( close_window,     []{}           )},
-  { 'Q',                                   quit            }
+  { 'J',  func_switcher( move_focus(1),   move_window(2)  )},
+  { 'K',  func_switcher( move_focus(-1),  move_window(-2) )},
+  { 'M',                 maximize                          },
+  { 'D',  func_switcher( []{},            close_window    )},
+  { 'Q',                 quit                              }
 };
 
-stdfunc func_switcher(stdfunc shift_func, stdfunc func) {
+stdfunc func_switcher(stdfunc func, stdfunc shift_func) {
   return [=] {
-    isPressed["SUBMOD"] ? shift_func() : func();
+    !isPressed["SUBMOD"] ? func() : shift_func();
   };
 };
 
