@@ -1,7 +1,10 @@
+#define UNICODE
+
 #include <iostream>
 #include <string>
 #include <map>
 #include <functional>
+#include <clocale>
 #include <windows.h>
 
 #define MODKEY    VK_NONCONVERT
@@ -20,6 +23,7 @@ void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
 void arrange();
+void update();
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc move_window(const int);
@@ -28,7 +32,10 @@ void close_window();
 void quit();
 
 HHOOK hhk;
-HWND hClientWnd;
+HWND clientWnd;
+HWND focusWnd;
+HWND mainWnd;
+std::map<HWND, unsigned int> wndList;
 static std::map<std::string, bool> isPressed = {
   { "MOD",     false },
   { "SUBMOD",  false }
@@ -104,10 +111,35 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
       switch_flag("SUBMOD");
 
     if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1)
-      PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
+      PostMessage(clientWnd, WM_KEYDOWN, vkCode, lParam);
   }
 
   return CallNextHookEx(hhk, code, wParam, lParam);
+}
+
+
+BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
+  static auto count = []() -> unsigned int {
+    static unsigned int i = 0;
+    return ++i;
+  };
+
+  //wndList[hWnd] = count();
+  if (IsWindowVisible(hWnd)) {
+    static wchar_t buf[128];
+    GetWindowText(hWnd, buf, 128);
+    std::wstring str  = buf;
+
+    if (str == L"")
+      return true;
+
+    print(count());
+    print(hWnd);
+    std::wcout << buf << std::endl;
+  }
+  return true;
+
+  return false;
 }
 
 bool start_hook(HINSTANCE hInst) {
@@ -163,23 +195,28 @@ void create_window(HINSTANCE hInstance) {
   if (RegisterClassEx(&wcex) == 0)
     return;
 
-  hClientWnd = CreateWindowEx(0, TEXT("wintile"), TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
+  clientWnd = CreateWindowEx(0, TEXT("wintile"), TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
 
-  if (hClientWnd == nullptr)
+  if (clientWnd == nullptr)
     return;
 }
 
 void arrange() {
+}
 
+void update() {
+  EnumWindows(EnumWndProc, (LPARAM)nullptr);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
+  std::setlocale(LC_ALL, "");
   create_window(hInstance);
-  //hide_taskbar();
-  start_hook(hInstance);
+  hide_taskbar();
+  update();
   arrange();
+  start_hook(hInstance);
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
     TranslateMessage(&msg);
