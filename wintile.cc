@@ -7,6 +7,8 @@
 #define MODKEY    VK_NONCONVERT
 #define SUBMODKEY VK_LSHIFT
 
+using stdfunc = std::function<void()>;
+
 template <class T>
 void print(T str) {
   std::cout << str << std::endl;
@@ -18,8 +20,9 @@ void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
 void setup(HINSTANCE);
-std::function<void()> move_focus(int);
-std::function<void()> move_window(int);
+stdfunc func_switcher(stdfunc, stdfunc);
+stdfunc move_focus(int);
+stdfunc move_window(int);
 void maximize();
 void close_window();
 void quit();
@@ -30,23 +33,27 @@ static std::map<std::string, bool> isPressed = {
   { "MOD",     false },
   { "SUBMOD",  false }
 };
-static std::map<unsigned int, std::function<void()>> callFunc = {
-  {             'J',  move_focus(1)   },
-  {             'K',  move_focus(-1)  },
-  { SUBMODKEY + 'J',  move_window(2)  },
-  { SUBMODKEY + 'K',  move_window(-2) },
-  {             'M',  maximize        },
-  { SUBMODKEY + 'D',  close_window    },
-  {             'Q',  quit            }
+static std::map<unsigned int, stdfunc> callFunc = {
+  { 'J',  func_switcher( move_window(2),   move_focus(1)  )},
+  { 'K',  func_switcher( move_window(-2),  move_focus(-1) )},
+  { 'M',                                   maximize        },
+  { 'D',  func_switcher( close_window,     []{}           )},
+  { 'Q',                                   quit            }
 };
 
-std::function<void()> move_focus(int value) {
+stdfunc func_switcher(stdfunc shift_func, stdfunc func) {
+  return [=] {
+    isPressed["SUBMOD"] ? shift_func() : func();
+  };
+};
+
+stdfunc move_focus(int value) {
   return [=] {
     print(value);
   };
 };
 
-std::function<void()> move_window(int value) {
+stdfunc move_window(int value) {
   return [=] {
     print("move_window");
     print(value);
@@ -97,7 +104,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
       switch_flag("SUBMOD");
 
     if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1)
-      PostMessage(hClientWnd, WM_KEYDOWN, vkCode + (isPressed["SUBMOD"] ? SUBMODKEY : 0), lParam);
+      PostMessage(hClientWnd, WM_KEYDOWN, vkCode, lParam);
   }
 
   return CallNextHookEx(hhk, code, wParam, lParam);
