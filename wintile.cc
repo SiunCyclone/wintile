@@ -41,9 +41,9 @@ static std::map<unsigned int, stdfunc> callFunc = {
   { 'Q',                 quit                              }
 };
 
-stdfunc func_switcher(const stdfunc& func, const stdfunc& shift_func) {
+stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
-    !isPressed["SUBMOD"] ? func() : shift_func();
+    !isPressed["SUBMOD"] ? func() : sub_func();
   };
 };
 
