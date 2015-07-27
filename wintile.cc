@@ -20,7 +20,7 @@ void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
 void setup(HINSTANCE);
-stdfunc func_switcher(stdfunc, stdfunc);
+stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(int);
 stdfunc move_window(int);
 void maximize();
@@ -41,7 +41,7 @@ static std::map<unsigned int, stdfunc> callFunc = {
   { 'Q',                 quit                              }
 };
 
-stdfunc func_switcher(stdfunc func, stdfunc shift_func) {
+stdfunc func_switcher(const stdfunc& func, const stdfunc& shift_func) {
   return [=] {
     !isPressed["SUBMOD"] ? func() : shift_func();
   };
