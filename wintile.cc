@@ -19,7 +19,7 @@ bool stop_hook();
 void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
-void setup(HINSTANCE);
+void arrange();
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc move_window(const int);
@@ -110,9 +110,8 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(hhk, code, wParam, lParam);
 }
 
-bool start_hook(HINSTANCE hInst, HWND hWnd) {
+bool start_hook(HINSTANCE hInst) {
   hhk = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
-  hClientWnd = hWnd;
 
   if (hhk == nullptr) {
     MessageBox(nullptr, TEXT("Error in start_hook() : hhk is nullptr"), nullptr, MB_OK);
@@ -164,24 +163,23 @@ void create_window(HINSTANCE hInstance) {
   if (RegisterClassEx(&wcex) == 0)
     return;
 
-  HWND hWtWnd = CreateWindowEx(0, TEXT("wintile"), TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
+  hClientWnd = CreateWindowEx(0, TEXT("wintile"), TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
 
-  if (hWtWnd == nullptr)
+  if (hClientWnd == nullptr)
     return;
-
-  start_hook(hInstance, hWtWnd);
 }
 
-void setup(HINSTANCE hInstance) {
-  hide_taskbar();
-  create_window(hInstance);
+void arrange() {
+
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
-  //setup(hInstance);
   create_window(hInstance);
+  //hide_taskbar();
+  start_hook(hInstance);
+  arrange();
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
     TranslateMessage(&msg);
