@@ -21,8 +21,8 @@ void hide_taskbar();
 void create_window(HINSTANCE);
 void setup(HINSTANCE);
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
-stdfunc move_focus(int);
-stdfunc move_window(int);
+stdfunc move_focus(const int);
+stdfunc move_window(const int);
 void maximize();
 void close_window();
 void quit();
@@ -47,13 +47,13 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& shift_func) {
   };
 };
 
-stdfunc move_focus(int value) {
+stdfunc move_focus(const int value) {
   return [=] {
     print(value);
   };
 };
 
-stdfunc move_window(int value) {
+stdfunc move_window(const int value) {
   return [=] {
     print("move_window");
     print(value);
