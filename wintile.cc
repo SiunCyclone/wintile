@@ -13,19 +13,23 @@
 #define SUBMODKEY VK_LSHIFT
 
 using stdfunc = std::function<void()>;
+using wndtype = std::tuple<HWND, std::wstring>;
 
 template <class T>
 void print(T str) {
   std::wcout << str << std::endl;
 }
 
+/* function declarations */
+HWND getHandle();
+std::wstring getTitle();
 bool start_hook(HINSTANCE, HWND);
 bool stop_hook();
 void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
 void arrange();
-void update();
+void get_all_window();
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc move_window(const int);
@@ -33,11 +37,11 @@ void maximize();
 void close_window();
 void quit();
 
+/* variables */
 HHOOK hhk;
 HWND clientWnd;
-HWND focusWnd;
-HWND mainWnd;
-std::vector<std::tuple<HWND, std::wstring>> wndList;
+std::vector<wndtype> wndList;
+std::vector<wndtype>::iterator focusWnd;
 static std::map<std::string, bool> isPressed = {
   { "MOD",     false },
   { "SUBMOD",  false }
@@ -49,6 +53,15 @@ static std::map<unsigned int, stdfunc> callFunc = {
   { 'D',  func_switcher( []{},            close_window    )},
   { 'Q',                 quit                              }
 };
+
+/* function implementations */
+HWND getHandle(wndtype wnd) {
+  return std::get<0>(wnd);
+}
+
+std::wstring getTitle(wndtype wnd) {
+  return std::get<1>(wnd);
+}
 
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
@@ -203,10 +216,12 @@ void create_window(HINSTANCE hInstance) {
 }
 
 void arrange() {
+  MoveWindow(getHandle(wndList[2]), 0, 0, 1280, 800, TRUE);
 }
 
-void update() {
+void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
+  focusWnd = wndList.begin();
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -215,7 +230,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   std::setlocale(LC_ALL, "");
   create_window(hInstance);
   hide_taskbar();
-  update();
+  get_all_window();
   arrange();
   start_hook(hInstance);
 
