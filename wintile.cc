@@ -13,7 +13,7 @@
 #define SUBMODKEY VK_LSHIFT
 
 using stdfunc = std::function<void()>;
-using wndtype = std::tuple<HWND, std::wstring>;
+using wndtype = std::tuple<HWND>;
 
 template <class T>
 void print(T str) {
@@ -28,7 +28,6 @@ bool stop_hook();
 void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
-void arrange();
 void get_all_window();
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
@@ -36,12 +35,19 @@ stdfunc move_window(const int);
 void maximize();
 void close_window();
 void quit();
+void tile_layout();
+void spiral_layout();
 
 /* variables */
 HHOOK hhk;
 HWND clientWnd;
 std::vector<wndtype> wndList;
 std::vector<wndtype>::iterator focusWnd;
+std::string layout = "TILE";
+static std::map<std::string, void (*)()> arrange = {
+  { "TILE",    tile_layout   },
+  { "SPIRAL",  spiral_layout }
+};
 static std::map<std::string, bool> isPressed = {
   { "MOD",     false },
   { "SUBMOD",  false }
@@ -57,10 +63,6 @@ static std::map<unsigned int, stdfunc> callFunc = {
 /* function implementations */
 HWND getHandle(wndtype wnd) {
   return std::get<0>(wnd);
-}
-
-std::wstring getTitle(wndtype wnd) {
-  return std::get<1>(wnd);
 }
 
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
@@ -92,6 +94,14 @@ void close_window() {
 
 void quit() {
   PostQuitMessage(0);
+}
+
+void tile_layout() {
+
+}
+
+void spiral_layout() {
+
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -134,23 +144,27 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 
 
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
-  static auto count = []() -> unsigned int {
-    static unsigned int i = 0;
-    return i++;
-  };
-
   if (IsWindowVisible(hWnd)) {
     static wchar_t buf[128];
-    GetWindowText(hWnd, buf, 128);
-    std::wstring title = buf;
+    std::wstring str;
 
-    if (title == L"")
+    GetWindowText(hWnd, buf, 128);
+    str = buf;
+    if (str == L"")
       return TRUE;
 
-    wndList.push_back(std::make_tuple(hWnd, title));
+    std::wstring title = str;
 
-    print(std::get<1>(wndList[count()]));
+    GetClassName(hWnd, buf, 128);
+    str = buf;
+    if (str == L"Progman" || str == L"MainWindowClass")
+      return TRUE;
+
+    print(title);
     print(hWnd);
+    print("");
+
+    wndList.push_back(std::make_tuple(hWnd));
   }
 
   return TRUE;
@@ -192,6 +206,7 @@ void hide_taskbar() {
 
 void create_window(HINSTANCE hInstance) {
   WNDCLASSEX wcex;
+  auto className = TEXT("WintileClass");
 
   wcex.cbSize = sizeof(WNDCLASSEX);
   wcex.style = 0;
@@ -203,20 +218,16 @@ void create_window(HINSTANCE hInstance) {
   wcex.hCursor = nullptr;
   wcex.hbrBackground = nullptr;
   wcex.lpszMenuName = nullptr;
-  wcex.lpszClassName = TEXT("wintile");
+  wcex.lpszClassName = className;
   wcex.hIconSm = nullptr;
 
   if (RegisterClassEx(&wcex) == 0)
     return;
 
-  clientWnd = CreateWindowEx(0, TEXT("wintile"), TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
+  clientWnd = CreateWindowEx(0, className, TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
 
   if (clientWnd == nullptr)
     return;
-}
-
-void arrange() {
-  MoveWindow(getHandle(wndList[2]), 0, 0, 1280, 800, TRUE);
 }
 
 void get_all_window() {
@@ -231,7 +242,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
-  arrange();
+  arrange[layout];
+  //MoveWindow(getHandle(wndList[2]), 0, 0, 1280, 800, TRUE);
   start_hook(hInstance);
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
