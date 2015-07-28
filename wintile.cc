@@ -3,7 +3,9 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 #include <functional>
+#include <tuple>
 #include <clocale>
 #include <windows.h>
 
@@ -14,7 +16,7 @@ using stdfunc = std::function<void()>;
 
 template <class T>
 void print(T str) {
-  std::cout << str << std::endl;
+  std::wcout << str << std::endl;
 }
 
 bool start_hook(HINSTANCE, HWND);
@@ -35,7 +37,7 @@ HHOOK hhk;
 HWND clientWnd;
 HWND focusWnd;
 HWND mainWnd;
-std::map<HWND, unsigned int> wndList;
+std::vector<std::tuple<HWND, std::wstring>> wndList;
 static std::map<std::string, bool> isPressed = {
   { "MOD",     false },
   { "SUBMOD",  false }
@@ -121,25 +123,24 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
   static auto count = []() -> unsigned int {
     static unsigned int i = 0;
-    return ++i;
+    return i++;
   };
 
-  //wndList[hWnd] = count();
   if (IsWindowVisible(hWnd)) {
     static wchar_t buf[128];
     GetWindowText(hWnd, buf, 128);
-    std::wstring str  = buf;
+    std::wstring title = buf;
 
-    if (str == L"")
+    if (title == L"")
       return true;
 
-    print(count());
-    print(hWnd);
-    std::wcout << buf << std::endl;
-  }
-  return true;
+    wndList.push_back(std::make_tuple(hWnd, title));
 
-  return false;
+    print(std::get<1>(wndList[count()]));
+    print(hWnd);
+  }
+
+  return true;
 }
 
 bool start_hook(HINSTANCE hInst) {
