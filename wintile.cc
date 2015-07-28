@@ -102,7 +102,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     DWORD vkCode = tmp->vkCode;
     bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
-    static auto switch_flag = [&](std::string name) {
+    static auto switch_flag = [&](const std::string name) {
       isPressed[name] = isKeyDown;
       return CallNextHookEx(hhk, code, wParam, lParam);
     };
@@ -132,7 +132,7 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     std::wstring title = buf;
 
     if (title == L"")
-      return true;
+      return TRUE;
 
     wndList.push_back(std::make_tuple(hWnd, title));
 
@@ -140,7 +140,7 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print(hWnd);
   }
 
-  return true;
+  return TRUE;
 }
 
 bool start_hook(HINSTANCE hInst) {
