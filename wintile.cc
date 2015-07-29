@@ -41,6 +41,8 @@ void spiral_layout();
 /* variables */
 HHOOK hhk;
 HWND clientWnd;
+static const unsigned int WINDOW_WIDTH = GetSystemMetrics(SM_CXSCREEN);
+static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 std::vector<wndtype> wndList;
 std::vector<wndtype>::iterator focusWnd;
 std::string layout = "TILE";
