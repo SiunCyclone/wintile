@@ -13,7 +13,7 @@
 #define SUBMODKEY VK_LSHIFT
 
 using stdfunc = std::function<void()>;
-using wndtype = std::tuple<HWND, bool>;
+using wndtype = std::tuple<HWND>;
 using uintvec = std::vector<unsigned int>;
 using layfunc = std::function<void(uintvec)>;
 
@@ -24,7 +24,6 @@ void print(T str) {
 
 /* function declarations */
 HWND getHandle(wndtype);
-bool getIsIconic(wndtype);
 bool start_hook(HINSTANCE, HWND);
 bool stop_hook();
 void show_taskbar();
@@ -46,7 +45,8 @@ HHOOK hhk;
 HWND clientWnd;
 static const unsigned int WINDOW_WIDTH = GetSystemMetrics(SM_CXSCREEN);
 static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
-std::vector<wndtype> wndList;
+std::vector<wndtype> onWndList;
+std::vector<wndtype> offWndList;
 std::vector<wndtype>::iterator focusWnd;
 std::string layout = "TILE";
 static std::map<std::string, stdfunc> arrange = {
@@ -68,10 +68,6 @@ static std::map<unsigned int, stdfunc> callFunc = {
 /* function implementations */
 HWND getHandle(wndtype wnd) {
   return std::get<0>(wnd);
-}
-
-bool getIsIconic(wndtype wnd) {
-  return std::get<1>(wnd);
 }
 
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
@@ -109,12 +105,10 @@ stdfunc call_layout(const layfunc& func) {
   return [=] {
     uintvec indices;
 
-    for (unsigned int i=0; i<wndList.size(); ++i) {
-      if (!getIsIconic(wndList[i]))
-        indices.push_back(i);
-    }
+    for (unsigned int i=0; i<onWndList.size(); ++i)
+      indices.push_back(i);
 
-    focusWnd = wndList.begin() + indices.front();
+    focusWnd = onWndList.begin() + indices.front();
 
     func(indices);
   };
@@ -127,9 +121,8 @@ void tile_layout(uintvec indices) {
 
   MoveWindow(getHandle(*focusWnd), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
-  for (unsigned int i=1; i<length; ++i) {
-    MoveWindow(getHandle(wndList[indices[i]]), width, (i-1)*height, width, height, TRUE);
-  }
+  for (unsigned int i=1; i<length; ++i)
+    MoveWindow(getHandle(onWndList[indices[i]]), width, (i-1)*height, width, height, TRUE);
 }
 
 void spiral_layout(uintvec indices) {
@@ -196,7 +189,12 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print(hWnd);
     print("");
 
-    wndList.push_back(std::make_tuple(hWnd, IsIconic(hWnd)));
+    if (IsIconic(hWnd)) {
+      offWndList.push_back(std::make_tuple(hWnd));
+      return TRUE;
+    }
+
+    onWndList.push_back(std::make_tuple(hWnd));
   }
 
   return TRUE;
