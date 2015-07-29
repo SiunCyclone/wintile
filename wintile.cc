@@ -13,7 +13,9 @@
 #define SUBMODKEY VK_LSHIFT
 
 using stdfunc = std::function<void()>;
-using wndtype = std::tuple<HWND>;
+using wndtype = std::tuple<HWND, bool>;
+using uintvec = std::vector<unsigned int>;
+using layfunc = std::function<void(uintvec)>;
 
 template <class T>
 void print(T str) {
@@ -21,8 +23,8 @@ void print(T str) {
 }
 
 /* function declarations */
-HWND getHandle();
-std::wstring getTitle();
+HWND getHandle(wndtype);
+bool getIsIconic(wndtype);
 bool start_hook(HINSTANCE, HWND);
 bool stop_hook();
 void show_taskbar();
@@ -35,8 +37,9 @@ stdfunc move_window(const int);
 void maximize();
 void close_window();
 void quit();
-void tile_layout();
-void spiral_layout();
+stdfunc call_layout(const layfunc&);
+void tile_layout(uintvec);
+void spiral_layout(uintvec);
 
 /* variables */
 HHOOK hhk;
@@ -46,9 +49,9 @@ static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 std::vector<wndtype> wndList;
 std::vector<wndtype>::iterator focusWnd;
 std::string layout = "TILE";
-static std::map<std::string, void (*)()> arrange = {
-  { "TILE",    tile_layout   },
-  { "SPIRAL",  spiral_layout }
+static std::map<std::string, stdfunc> arrange = {
+  { "TILE",    call_layout( tile_layout   )},
+  { "SPIRAL",  call_layout( spiral_layout )}
 };
 static std::map<std::string, bool> isPressed = {
   { "MOD",     false },
@@ -65,6 +68,10 @@ static std::map<unsigned int, stdfunc> callFunc = {
 /* function implementations */
 HWND getHandle(wndtype wnd) {
   return std::get<0>(wnd);
+}
+
+bool getIsIconic(wndtype wnd) {
+  return std::get<1>(wnd);
 }
 
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
@@ -98,11 +105,34 @@ void quit() {
   PostQuitMessage(0);
 }
 
-void tile_layout() {
+stdfunc call_layout(const layfunc& func) {
+  return [=] {
+    uintvec indices;
 
+    for (unsigned int i=0; i<wndList.size(); ++i) {
+      if (!getIsIconic(wndList[i]))
+        indices.push_back(i);
+    }
+
+    focusWnd = wndList.begin() + indices.front();
+
+    func(indices);
+  };
 }
 
-void spiral_layout() {
+void tile_layout(uintvec indices) {
+  auto length = indices.size();
+  auto width = WINDOW_WIDTH / 2;
+  auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
+
+  MoveWindow(getHandle(*focusWnd), 0, 0, width, WINDOW_HEIGHT, TRUE);
+
+  for (unsigned int i=1; i<length; ++i) {
+    MoveWindow(getHandle(wndList[indices[i]]), width, (i-1)*height, width, height, TRUE);
+  }
+}
+
+void spiral_layout(uintvec indices) {
 
 }
 
@@ -166,7 +196,7 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print(hWnd);
     print("");
 
-    wndList.push_back(std::make_tuple(hWnd));
+    wndList.push_back(std::make_tuple(hWnd, IsIconic(hWnd)));
   }
 
   return TRUE;
@@ -234,7 +264,6 @@ void create_window(HINSTANCE hInstance) {
 
 void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
-  focusWnd = wndList.begin();
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -244,8 +273,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
-  arrange[layout];
-  //MoveWindow(getHandle(wndList[2]), 0, 0, 1280, 800, TRUE);
+  arrange[layout]();
   start_hook(hInstance);
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
