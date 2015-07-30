@@ -15,7 +15,6 @@
 using stdfunc = std::function<void()>;
 using wndtype = std::tuple<HWND>;
 using uintvec = std::vector<unsigned int>;
-using layfunc = std::function<void(uintvec)>;
 
 template <class T>
 void print(T str) {
@@ -36,9 +35,9 @@ stdfunc move_window(const int);
 void maximize();
 void close_window();
 void quit();
-stdfunc call_layout(const layfunc&);
-void tile_layout(uintvec);
-void spiral_layout(uintvec);
+stdfunc call_layout(const stdfunc&);
+void tile_layout();
+void spiral_layout();
 
 /* variables */
 HHOOK hhk;
@@ -47,7 +46,7 @@ static const unsigned int WINDOW_WIDTH = GetSystemMetrics(SM_CXSCREEN);
 static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 std::vector<wndtype> onWndList;
 std::vector<wndtype> offWndList;
-std::vector<wndtype>::iterator focusWnd;
+int focusIndex;
 std::string layout = "TILE";
 static std::map<std::string, stdfunc> arrange = {
   { "TILE",    call_layout( tile_layout   )},
@@ -78,7 +77,17 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int value) {
   return [=] {
-    print(value);
+    // XXX preserve other place
+    int length = onWndList.size();
+    focusIndex += value;
+    if (focusIndex >= length)
+      focusIndex = 0;
+    else if (focusIndex < 0)
+      focusIndex = length - 1;
+
+    print(focusIndex);
+    //SetActiveWindow(handle);
+    //PostMessage(clientWnd, WM_ACTIVATE, true, 0);
   };
 };
 
@@ -101,40 +110,33 @@ void quit() {
   PostQuitMessage(0);
 }
 
-stdfunc call_layout(const layfunc& func) {
+stdfunc call_layout(const stdfunc& func) {
   return [=] {
-    uintvec indices;
-
-    for (unsigned int i=0; i<onWndList.size(); ++i)
-      indices.push_back(i);
-
-    focusWnd = onWndList.begin() + indices.front();
-
-    func(indices);
+    focusIndex = 0;
+    func();
   };
 }
 
-void tile_layout(uintvec indices) {
-  auto length = indices.size();
+void tile_layout() {
+  auto length = onWndList.size();
   auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
-  MoveWindow(getHandle(*focusWnd), 0, 0, width, WINDOW_HEIGHT, TRUE);
+  MoveWindow(getHandle(onWndList[focusIndex]), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
   for (unsigned int i=1; i<length; ++i)
-    MoveWindow(getHandle(onWndList[indices[i]]), width, (i-1)*height, width, height, TRUE);
+    MoveWindow(getHandle(onWndList[i]), width, (i-1)*height, width, height, TRUE);
 }
 
-void spiral_layout(uintvec indices) {
+void spiral_layout() {
 
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
-    case WM_KEYDOWN: {
+    case WM_KEYDOWN:
       callFunc[wParam]();
       break;
-    }
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
@@ -204,7 +206,7 @@ bool start_hook(HINSTANCE hInst) {
   hhk = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
 
   if (hhk == nullptr) {
-    MessageBox(nullptr, TEXT("Error in start_hook() : hhk is nullptr"), nullptr, MB_OK);
+    print("Error in start_hook() : hhk is nullptr");
     return false;
   }
 
@@ -213,7 +215,7 @@ bool start_hook(HINSTANCE hInst) {
 
 bool stop_hook() {
   if (UnhookWindowsHookEx(hhk) == 0) {
-    MessageBox(nullptr, TEXT("Error in stop_hook()"), nullptr, MB_OK);
+    print("Error in stop_hook()");
     return false;
   }
 
