@@ -86,8 +86,9 @@ stdfunc move_focus(const int value) {
       focusIndex = length - 1;
 
     print(focusIndex);
-    //SetActiveWindow(handle);
-    //PostMessage(clientWnd, WM_ACTIVATE, true, 0);
+    auto handle = getHandle(onWndList[focusIndex]);
+
+    SetFocus(handle);
   };
 };
 
@@ -264,6 +265,11 @@ void create_window(HINSTANCE hInstance) {
 
 void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
+  for (unsigned int i=0; i<onWndList.size(); ++i) {
+    auto fromId = GetWindowThreadProcessId(getHandle(onWndList[i]), nullptr);
+    auto toId = GetCurrentThreadId();
+    AttachThreadInput(fromId, toId, TRUE);
+  }
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -282,7 +288,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   stop_hook();
-  show_taskbar();
+  //show_taskbar();
 
   return msg.wParam;
 }
