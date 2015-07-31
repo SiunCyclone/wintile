@@ -28,7 +28,7 @@ HWND getHandle(wndtype wnd) {
 
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
-    !isPressed["SUBMOD"] ? func() : sub_func();
+    !isPressed[SUBMODKEY] ? func() : sub_func();
   };
 };
 
@@ -110,17 +110,12 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     DWORD vkCode = tmp->vkCode;
     bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
-    static auto switch_flag = [&](const std::string name) {
-      isPressed[name] = isKeyDown;
+    if (vkCode == MODKEY || vkCode == SUBMODKEY) {
+      isPressed[vkCode] = isKeyDown;
       return CallNextHookEx(hhk, code, wParam, lParam);
-    };
+    }
 
-    if (vkCode == MODKEY)
-      switch_flag("MOD");
-    else if (vkCode == SUBMODKEY)
-      switch_flag("SUBMOD");
-
-    if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1) {
+    if (isPressed[MODKEY] && isKeyDown && callFunc.count(vkCode) == 1) {
       PostMessage(clientWnd, WM_KEYDOWN, vkCode, lParam);
       return 1;
     }

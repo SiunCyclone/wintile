@@ -9,8 +9,10 @@
 #include <clocale>
 #include <windows.h>
 
-#define MODKEY    VK_NONCONVERT
-#define SUBMODKEY VK_LSHIFT
+static const unsigned int MODKEY    = VK_NONCONVERT;
+static const unsigned int SUBMODKEY = VK_LSHIFT;
+static const unsigned int WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
+static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 
 using stdfunc = std::function<void()>;
 using wndtype = std::tuple<HWND>;
@@ -39,21 +41,24 @@ void get_all_window();
 
 /* variables */
 HHOOK hhk;
+
 HWND clientWnd;
-static const unsigned int WINDOW_WIDTH = GetSystemMetrics(SM_CXSCREEN);
-static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
+
 std::vector<wndtype> onWndList;
 std::vector<wndtype> offWndList;
 int focusIndex;
 std::string layout = "TILE";
+
 static std::map<std::string, stdfunc> arrange = {
   { "TILE",    call_layout( tile_layout   )},
   { "SPIRAL",  call_layout( spiral_layout )}
 };
-static std::map<std::string, bool> isPressed = {
-  { "MOD",     false },
-  { "SUBMOD",  false }
+
+static std::map<unsigned int, bool> isPressed = {
+  { MODKEY,     false },
+  { SUBMODKEY,  false }
 };
+
 static std::map<unsigned int, stdfunc> callFunc = {
   { 'J',  func_switcher( move_focus(1),   move_window(2)  )},
   { 'K',  func_switcher( move_focus(-1),  move_window(-2) )},
