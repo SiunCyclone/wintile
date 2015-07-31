@@ -88,6 +88,7 @@ stdfunc move_focus(const int value) {
     print(focusIndex);
     auto handle = getHandle(onWndList[focusIndex]);
 
+    SetForegroundWindow(handle);
     SetFocus(handle);
   };
 };
@@ -141,6 +142,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
+
   return 0;
 }
 
@@ -163,8 +165,10 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     else if (vkCode == SUBMODKEY)
       switch_flag("SUBMOD");
 
-    if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1)
+    if (isPressed["MOD"] && isKeyDown && callFunc.count(vkCode) == 1) {
       PostMessage(clientWnd, WM_KEYDOWN, vkCode, lParam);
+      return 1;
+    }
   }
 
   return CallNextHookEx(hhk, code, wParam, lParam);
