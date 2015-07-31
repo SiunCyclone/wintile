@@ -8,7 +8,7 @@ all: $(TARGETS)
 wintile: wintile.o
 	$(CC) $< -o $@
 
-%.o: %.cc
+%.o: %.cc wintile.h
 	$(CC) $(CFLAGS) -c $<
 
 .PHONY: clean
