@@ -15,12 +15,9 @@ static const unsigned int WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
 static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 
 using stdfunc = std::function<void()>;
-using wndtype = std::tuple<HWND>;
 using uintvec = std::vector<unsigned int>;
 
 /* function declarations */
-HWND getHandle(wndtype wnd);
-
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc move_window(const int);
@@ -44,11 +41,7 @@ HHOOK hhk;
 
 HWND clientWnd;
 
-std::vector<wndtype> onWndList;
-std::vector<wndtype> offWndList;
-int focusIndex;
 std::string layout = "TILE";
-
 static std::map<std::string, stdfunc> arrange = {
   { "TILE",    call_layout( tile_layout   )},
   { "SPIRAL",  call_layout( spiral_layout )}
@@ -67,31 +60,50 @@ static std::map<unsigned int, stdfunc> callFunc = {
   { 'Q',                 quit                              }
 };
 
+/* window */
+enum struct WindowState {
+  NORMAL,
+  ICON,
+  MAXIMUM,
+  FLOAT,
+};
+
+enum struct WindowFlag {
+  SHOW,
+  HIDE
+};
+
 class Window final {
   public:
-    Window(const HWND handle, const std::string state) : _handle(handle), _state(state){}
-    HWND getHandle();
-    std::string getState();
+    Window(){}
+    Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state){}
+    HWND getHandle() const;
+    WindowState getState() const;
+    void setState(const WindowState& state);
+
   private:
     HWND _handle;
-    std::string _state;
-    // NORMAL
-    // ICON
-    // MAXIMUM
-    // FLOAT
+    WindowState _state;
 };
+
 class WindowList final {
   public:
-    void next();
-    void prev();
+    HWND focused();
+    HWND next(const WindowFlag&);
+    HWND prev(const WindowFlag&);
     void add(const Window&);
-    void remove(Window);
-    std::vector<Window> getShowList();
-    std::vector<Window> getHideList();
-    unsigned int length(const std::string);
+    void remove(const Window&);
+    unsigned int length(const WindowFlag&);
+
   private:
+    void move_index(const int, const WindowFlag&);
+
+    int _index = 0;
     std::vector<Window> _showWndList;
     std::vector<Window> _hideWndList;
+    unsigned int _showLength = 0;
+    unsigned int _hideLength = 0;
 };
+
 std::unique_ptr<WindowList> wndList(new WindowList);
 

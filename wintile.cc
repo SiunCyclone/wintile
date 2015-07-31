@@ -17,40 +17,77 @@ void print(T str) {
   std::wcout << str << std::endl;
 }
 
-void WindowList::add(const Window& wnd) {
+HWND Window::getHandle() const {
+  return _handle;
+}
 
+WindowState Window::getState() const {
+  return _state;
+}
+
+void Window::setState(const WindowState& state) {
+  _state = state;
+}
+
+HWND WindowList::focused() {
+  return _showWndList[_index].getHandle();
+}
+
+HWND WindowList::next(const WindowFlag& flag) {
+  move_index(1, flag);
+  return (flag == WindowFlag::SHOW) ? _showWndList[_index].getHandle() : _hideWndList[_index].getHandle();
+}
+
+HWND WindowList::prev(const WindowFlag& flag) {
+  move_index(-1, flag);
+  return (flag == WindowFlag::SHOW) ? _showWndList[_index].getHandle() : _hideWndList[_index].getHandle();
+}
+
+void WindowList::add(const Window& window) {
+  if (window.getState() == WindowState::ICON) {
+    _hideWndList.push_back(window);
+    ++_hideLength;
+  } else {
+    _showWndList.push_back(window);
+    ++_showLength;
+  }
+}
+
+void WindowList::remove(const Window&) {
+
+}
+
+unsigned int WindowList::length(const WindowFlag& flag) {
+  return (flag == WindowFlag::SHOW) ? _showLength : _hideLength;
+}
+
+void WindowList::move_index(const int dist, const WindowFlag& flag) {
+  _index += dist;
+
+  int length = (flag == WindowFlag::SHOW) ? _showLength : _hideLength;
+  if (_index < 0)
+    _index = length - 1;
+  else if (_index >= length)
+    _index = 0;
 }
 
 /* function implementations */
-HWND getHandle(wndtype wnd) {
-  return std::get<0>(wnd);
-}
-
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
     !isPressed[SUBMODKEY] ? func() : sub_func();
   };
 };
 
-stdfunc move_focus(const int value) {
+stdfunc move_focus(const int dist) {
   return [=] {
-    // XXX preserve other place
-    int length = onWndList.size();
-    focusIndex += value;
-    if (focusIndex >= length)
-      focusIndex = 0;
-    else if (focusIndex < 0)
-      focusIndex = length - 1;
-
-    print(focusIndex);
-    auto handle = getHandle(onWndList[focusIndex]);
-
+    auto flag = WindowFlag::SHOW;
+    auto handle = (dist == 1) ? wndList->next(flag) : wndList->prev(flag);
     SetForegroundWindow(handle);
     SetFocus(handle);
   };
 };
 
-stdfunc move_window(const int value) {
+stdfunc move_window(const int dist) {
   return [=] {
   };
 }
@@ -69,20 +106,19 @@ void quit() {
 
 stdfunc call_layout(const stdfunc& func) {
   return [=] {
-    focusIndex = 0;
     func();
   };
 }
 
 void tile_layout() {
-  auto length = onWndList.size();
+  auto length = wndList->length(WindowFlag::SHOW);
   auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
-  MoveWindow(getHandle(onWndList[focusIndex]), 0, 0, width, WINDOW_HEIGHT, TRUE);
+  MoveWindow(wndList->focused(), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
   for (unsigned int i=1; i<length; ++i)
-    MoveWindow(getHandle(onWndList[i]), width, (i-1)*height, width, height, TRUE);
+    MoveWindow(wndList->next(WindowFlag::SHOW), width, (i-1)*height, width, height, TRUE);
 }
 
 void spiral_layout() {
@@ -147,13 +183,11 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print("");
 
     if (IsIconic(hWnd)) {
-      offWndList.push_back(std::make_tuple(hWnd));
-      //wndList->add(Window(hWnd, "ICON"));
+      wndList->add(Window(hWnd, WindowState::ICON));
       return TRUE;
     }
 
-    onWndList.push_back(std::make_tuple(hWnd));
-    //wndList->add(Window(hWnd, "NORMAL"));
+    wndList->add(Window(hWnd, WindowState::NORMAL));
   }
 
   return TRUE;
@@ -221,8 +255,10 @@ void create_window(HINSTANCE hInstance) {
 
 void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
-  for (unsigned int i=0; i<onWndList.size(); ++i) {
-    auto fromId = GetWindowThreadProcessId(getHandle(onWndList[i]), nullptr);
+
+  for (unsigned int i=0; i<wndList->length(WindowFlag::SHOW); ++i) {
+    auto handle = (i == 0) ? wndList->focused() : wndList->next(WindowFlag::SHOW);
+    auto fromId = GetWindowThreadProcessId(handle, nullptr);
     auto toId = GetCurrentThreadId();
     AttachThreadInput(fromId, toId, TRUE);
   }
