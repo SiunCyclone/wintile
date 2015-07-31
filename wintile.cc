@@ -33,12 +33,12 @@ HWND WindowList::focused() {
   return _showWndList[_index].getHandle();
 }
 
-HWND WindowList::next(const WindowFlag& flag) {
+HWND WindowList::next(const WindowFlag& flag = WindowFlag::SHOW) {
   move_index(1, flag);
   return (flag == WindowFlag::SHOW) ? _showWndList[_index].getHandle() : _hideWndList[_index].getHandle();
 }
 
-HWND WindowList::prev(const WindowFlag& flag) {
+HWND WindowList::prev(const WindowFlag& flag = WindowFlag::SHOW) {
   move_index(-1, flag);
   return (flag == WindowFlag::SHOW) ? _showWndList[_index].getHandle() : _hideWndList[_index].getHandle();
 }
@@ -57,7 +57,7 @@ void WindowList::remove(const Window&) {
 
 }
 
-unsigned int WindowList::length(const WindowFlag& flag) {
+unsigned int WindowList::length(const WindowFlag& flag = WindowFlag::SHOW) {
   return (flag == WindowFlag::SHOW) ? _showLength : _hideLength;
 }
 
@@ -80,8 +80,7 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    auto flag = WindowFlag::SHOW;
-    auto handle = (dist == 1) ? wndList->next(flag) : wndList->prev(flag);
+    auto handle = (dist == 1) ? wndList->next() : wndList->prev();
     SetForegroundWindow(handle);
     SetFocus(handle);
   };
@@ -111,14 +110,14 @@ stdfunc call_layout(const stdfunc& func) {
 }
 
 void tile_layout() {
-  auto length = wndList->length(WindowFlag::SHOW);
+  auto length = wndList->length();
   auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
   MoveWindow(wndList->focused(), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
   for (unsigned int i=1; i<length; ++i)
-    MoveWindow(wndList->next(WindowFlag::SHOW), width, (i-1)*height, width, height, TRUE);
+    MoveWindow(wndList->next(), width, (i-1)*height, width, height, TRUE);
 }
 
 void spiral_layout() {
@@ -256,8 +255,8 @@ void create_window(HINSTANCE hInstance) {
 void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
 
-  for (unsigned int i=0; i<wndList->length(WindowFlag::SHOW); ++i) {
-    auto handle = (i == 0) ? wndList->focused() : wndList->next(WindowFlag::SHOW);
+  for (unsigned int i=0; i<wndList->length(); ++i) {
+    auto handle = (i == 0) ? wndList->focused() : wndList->next();
     auto fromId = GetWindowThreadProcessId(handle, nullptr);
     auto toId = GetCurrentThreadId();
     AttachThreadInput(fromId, toId, TRUE);
