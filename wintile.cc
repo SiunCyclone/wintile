@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 #include <map>
-#include <vector>
+#include <list>
 #include <functional>
 #include <tuple>
 #include <memory>
@@ -17,6 +17,7 @@ void print(T str) {
   std::wcout << str << std::endl;
 }
 
+/* class implementations */
 HWND Window::getHandle() const {
   return _handle;
 }
@@ -29,46 +30,53 @@ void Window::setState(const WindowState& state) {
   _state = state;
 }
 
+void WindowList::init() {
+  _itr = _list.begin();
+}
+
 HWND WindowList::focused() {
-  return _showWndList[_index].getHandle();
+  return (*_itr).getHandle();
 }
 
-HWND WindowList::next(const WindowFlag& flag = WindowFlag::SHOW) {
-  move_index(1, flag);
-  return (flag == WindowFlag::SHOW) ? _showWndList[_index].getHandle() : _hideWndList[_index].getHandle();
+HWND WindowList::next() {
+  ++_itr;
+  if (_itr == _list.end())
+    _itr = _list.begin();
+  return (*_itr).getHandle();
 }
 
-HWND WindowList::prev(const WindowFlag& flag = WindowFlag::SHOW) {
-  move_index(-1, flag);
-  return (flag == WindowFlag::SHOW) ? _showWndList[_index].getHandle() : _hideWndList[_index].getHandle();
+HWND WindowList::prev() {
+  if (_itr == _list.begin())
+    _itr = _list.end();
+  --_itr;
+  return (*_itr).getHandle();
+}
+
+Window WindowList::focusedW() {
+  return *_itr;
+}
+
+Window WindowList::nextW() {
+  ++_itr;
+  return *_itr;
+}
+
+Window WindowList::prevW() {
+  --_itr;
+  return *_itr;
 }
 
 void WindowList::add(const Window& window) {
-  if (window.getState() == WindowState::ICON) {
-    _hideWndList.push_back(window);
-    ++_hideLength;
-  } else {
-    _showWndList.push_back(window);
-    ++_showLength;
-  }
+  _list.push_back(window);
+  ++_length;
 }
 
 void WindowList::remove(const Window&) {
 
 }
 
-unsigned int WindowList::length(const WindowFlag& flag = WindowFlag::SHOW) {
-  return (flag == WindowFlag::SHOW) ? _showLength : _hideLength;
-}
-
-void WindowList::move_index(const int dist, const WindowFlag& flag) {
-  _index += dist;
-
-  int length = (flag == WindowFlag::SHOW) ? _showLength : _hideLength;
-  if (_index < 0)
-    _index = length - 1;
-  else if (_index >= length)
-    _index = 0;
+size_t WindowList::length() {
+  return _length;
 }
 
 /* function implementations */
@@ -80,7 +88,7 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    auto handle = (dist == 1) ? wndList->next() : wndList->prev();
+    auto handle = (dist == 1) ? showWndList->next() : showWndList->prev();
     SetForegroundWindow(handle);
     SetFocus(handle);
   };
@@ -110,14 +118,17 @@ stdfunc call_layout(const stdfunc& func) {
 }
 
 void tile_layout() {
-  auto length = wndList->length();
+  size_t length = showWndList->length();
   auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
-  MoveWindow(wndList->focused(), 0, 0, width, WINDOW_HEIGHT, TRUE);
+  showWndList->init();
+  MoveWindow(showWndList->focused(), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
-  for (unsigned int i=1; i<length; ++i)
-    MoveWindow(wndList->next(), width, (i-1)*height, width, height, TRUE);
+  for (size_t i=1; i<length; ++i)
+    MoveWindow(showWndList->next(), width, (i-1)*height, width, height, TRUE);
+
+  move_focus(1)();
 }
 
 void spiral_layout() {
@@ -182,11 +193,11 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print("");
 
     if (IsIconic(hWnd)) {
-      wndList->add(Window(hWnd, WindowState::ICON));
+      hideWndList->add(Window(hWnd, WindowState::ICON));
       return TRUE;
     }
 
-    wndList->add(Window(hWnd, WindowState::NORMAL));
+    showWndList->add(Window(hWnd, WindowState::NORMAL));
   }
 
   return TRUE;
@@ -255,8 +266,9 @@ void create_window(HINSTANCE hInstance) {
 void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
 
-  for (unsigned int i=0; i<wndList->length(); ++i) {
-    auto handle = (i == 0) ? wndList->focused() : wndList->next();
+  showWndList->init();
+  for (size_t i=0; i<showWndList->length(); ++i) {
+    auto handle = (i == 0) ? showWndList->focused() : showWndList->next();
     auto fromId = GetWindowThreadProcessId(handle, nullptr);
     auto toId = GetCurrentThreadId();
     AttachThreadInput(fromId, toId, TRUE);

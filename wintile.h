@@ -2,7 +2,7 @@
 
 #include <string>
 #include <map>
-#include <vector>
+#include <list>
 #include <functional>
 #include <tuple>
 #include <memory>
@@ -15,7 +15,6 @@ static const unsigned int WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
 static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 
 using stdfunc = std::function<void()>;
-using uintvec = std::vector<unsigned int>;
 
 /* function declarations */
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
@@ -53,8 +52,8 @@ static std::map<unsigned int, bool> isPressed = {
 };
 
 static std::map<unsigned int, stdfunc> callFunc = {
-  { 'J',  func_switcher( move_focus(1),   move_window(2)  )},
-  { 'K',  func_switcher( move_focus(-1),  move_window(-2) )},
+  { 'J',  func_switcher( move_focus(1),   move_window(1)  )},
+  { 'K',  func_switcher( move_focus(-1),  move_window(-1) )},
   { 'M',                 maximize                          },
   { 'D',  func_switcher( []{},            close_window    )},
   { 'Q',                 quit                              }
@@ -68,18 +67,13 @@ enum struct WindowState {
   FLOAT,
 };
 
-enum struct WindowFlag {
-  SHOW,
-  HIDE
-};
-
 class Window final {
   public:
     Window(){}
     Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state){}
     HWND getHandle() const;
     WindowState getState() const;
-    void setState(const WindowState& state);
+    void setState(const WindowState&);
 
   private:
     HWND _handle;
@@ -88,22 +82,23 @@ class Window final {
 
 class WindowList final {
   public:
+    void init();
     HWND focused();
-    HWND next(const WindowFlag&);
-    HWND prev(const WindowFlag&);
+    HWND next();
+    HWND prev();
+    Window focusedW();
+    Window nextW();
+    Window prevW();
     void add(const Window&);
     void remove(const Window&);
-    unsigned int length(const WindowFlag&);
+    size_t length();
 
   private:
-    void move_index(const int, const WindowFlag&);
-
-    int _index = 0;
-    std::vector<Window> _showWndList;
-    std::vector<Window> _hideWndList;
-    unsigned int _showLength = 0;
-    unsigned int _hideLength = 0;
+    size_t _length = 0;
+    std::list<Window> _list;
+    std::list<Window>::iterator _itr;
 };
 
-std::unique_ptr<WindowList> wndList(new WindowList);
+std::unique_ptr<WindowList> showWndList(new WindowList);
+std::unique_ptr<WindowList> hideWndList(new WindowList);
 
