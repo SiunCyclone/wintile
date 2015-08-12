@@ -54,6 +54,7 @@ static std::map<unsigned int, bool> isPressed = {
 static std::map<unsigned int, stdfunc> callFunc = {
   { 'J',  func_switcher( move_focus(1),   move_window(1)  )},
   { 'K',  func_switcher( move_focus(-1),  move_window(-1) )},
+  { 'A',                 move_window(0)                    },
   { 'M',                 maximize                          },
   { 'D',  func_switcher( []{},            close_window    )},
   { 'Q',                 quit                              }
@@ -67,17 +68,35 @@ enum struct WindowState {
   FLOAT,
 };
 
+struct WindowRect {
+  WindowRect(){}
+  WindowRect(const int argX, const int argY, const int argW, const int argH) {
+    x = argX;
+    y = argY;
+    w = argW;
+    h = argH;
+  }
+
+  int x;
+  int y;
+  int w;
+  int h;
+};
+
 class Window final {
   public:
     Window(){}
     Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state){}
     HWND getHandle() const;
     WindowState getState() const;
+    WindowRect getRect() const;
     void setState(const WindowState&);
+    void setRect(const WindowRect&);
 
   private:
     HWND _handle;
     WindowState _state;
+    WindowRect _rect;
 };
 
 class WindowList final {
@@ -86,12 +105,13 @@ class WindowList final {
     HWND focused();
     HWND next();
     HWND prev();
-    Window focusedW();
-    Window nextW();
-    Window prevW();
-    void add(const Window&);
-    void remove(const Window&);
-    size_t length();
+    Window& focusedW();
+    Window& nextW();
+    Window& prevW();
+    void push_back(const Window&);
+    void insert(const Window&);
+    void erase();
+    size_t length() const;
 
   private:
     size_t _length = 0;

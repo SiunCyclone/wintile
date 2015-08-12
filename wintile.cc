@@ -30,52 +30,64 @@ void Window::setState(const WindowState& state) {
   _state = state;
 }
 
+WindowRect Window::getRect() const {
+  return _rect;
+}
+
+void Window::setRect(const WindowRect& rect) {
+  _rect = rect;
+}
+
 void WindowList::init() {
   _itr = _list.begin();
 }
 
 HWND WindowList::focused() {
-  return (*_itr).getHandle();
+  return focusedW().getHandle();
 }
 
 HWND WindowList::next() {
-  ++_itr;
-  if (_itr == _list.end())
-    _itr = _list.begin();
-  return (*_itr).getHandle();
+  return nextW().getHandle();
 }
 
 HWND WindowList::prev() {
+  return prevW().getHandle();
+}
+
+Window& WindowList::focusedW() {
+  return *_itr;
+}
+
+Window& WindowList::nextW() {
+  ++_itr;
+  if (_itr == _list.end())
+    _itr = _list.begin();
+  return *_itr;
+}
+
+Window& WindowList::prevW() {
   if (_itr == _list.begin())
     _itr = _list.end();
   --_itr;
-  return (*_itr).getHandle();
-}
-
-Window WindowList::focusedW() {
   return *_itr;
 }
 
-Window WindowList::nextW() {
-  ++_itr;
-  return *_itr;
-}
-
-Window WindowList::prevW() {
-  --_itr;
-  return *_itr;
-}
-
-void WindowList::add(const Window& window) {
+void WindowList::push_back(const Window& window) {
   _list.push_back(window);
   ++_length;
 }
 
-void WindowList::remove(const Window&) {
-
+void WindowList::insert(const Window& window) {
+  _itr = _list.insert(_itr, window);
+  ++_length;
 }
 
-size_t WindowList::length() {
+void WindowList::erase() {
+  _itr = _list.erase(_itr);
+  --_length;
+}
+
+size_t WindowList::length() const {
   return _length;
 }
 
@@ -96,6 +108,27 @@ stdfunc move_focus(const int dist) {
 
 stdfunc move_window(const int dist) {
   return [=] {
+    auto tmp = showWndList->focusedW();
+    auto tmpRect = tmp.getRect();
+
+    if (dist == 1) {
+      showWndList->focusedW() = showWndList->nextW();
+      showWndList->prevW().setRect(tmpRect);
+    } else if (dist == -1) {
+      showWndList->focusedW() = showWndList->prevW();
+      showWndList->nextW().setRect(tmpRect);
+    }
+    auto wnd = showWndList->focusedW();
+    auto wndRect = wnd.getRect();
+    MoveWindow(wnd.getHandle(), wndRect.x, wndRect.y, wndRect.w, wndRect.h, TRUE);
+
+    if (dist == 1)
+      tmp.setRect(showWndList->nextW().getRect());
+    else if (dist == -1)
+      tmp.setRect(showWndList->prevW().getRect());
+    showWndList->focusedW() = tmp;
+    tmpRect = tmp.getRect();
+    MoveWindow(tmp.getHandle(), tmpRect.x, tmpRect.y, tmpRect.w, tmpRect.h, TRUE);
   };
 }
 
@@ -124,9 +157,12 @@ void tile_layout() {
 
   showWndList->init();
   MoveWindow(showWndList->focused(), 0, 0, width, WINDOW_HEIGHT, TRUE);
+  showWndList->focusedW().setRect(WindowRect(0, 0, width, WINDOW_HEIGHT));
 
-  for (size_t i=1; i<length; ++i)
+  for (size_t i=1; i<length; ++i) {
     MoveWindow(showWndList->next(), width, (i-1)*height, width, height, TRUE);
+    showWndList->focusedW().setRect(WindowRect(width, (i-1)*height, width, height));
+  }
 
   move_focus(1)();
 }
@@ -193,11 +229,11 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print("");
 
     if (IsIconic(hWnd)) {
-      hideWndList->add(Window(hWnd, WindowState::ICON));
+      hideWndList->push_back(Window(hWnd, WindowState::ICON));
       return TRUE;
     }
 
-    showWndList->add(Window(hWnd, WindowState::NORMAL));
+    showWndList->push_back(Window(hWnd, WindowState::NORMAL));
   }
 
   return TRUE;
