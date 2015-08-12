@@ -4,17 +4,19 @@
 * Simple keyboard manipulation
 * Easily Customize config
 
+```
 j, k     : Move focus
 S-j, S-k : Move window
 h, l     : Move window (when floating
-S-h, S-l : Change window size
-1~9      : Move virtual window focus
+S-h, S-l : Resize window
+1~9      : Move virtual desktop
 m        : Maximize
-S-Enter  : Terminal
+S-Enter  : Open terminal
 r        : Launcher
-S-d      : Close winodw
-i        : Browser
-a        : Set as a parent window
-Space    : Change mode
+S-d      : Close window
+i        : Open browser
+a        : Set as a main window
+Space    : Change tiling mode
 q        : Quit
+```
 
