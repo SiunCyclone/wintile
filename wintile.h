@@ -21,7 +21,7 @@ stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc move_window(const int);
 void maximize();
-void close_window();
+void destroy_window();
 void quit();
 
 stdfunc call_layout(const stdfunc&);
@@ -56,7 +56,7 @@ static std::map<unsigned int, stdfunc> callFunc = {
   { 'K',  func_switcher( move_focus(-1),  move_window(-1) )},
   { 'A',                 move_window(0)                    },
   { 'M',                 maximize                          },
-  { 'D',  func_switcher( []{},            close_window    )},
+  { 'D',  func_switcher( []{},            destroy_window  )},
   { 'Q',                 quit                              }
 };
 

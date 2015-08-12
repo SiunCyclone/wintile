@@ -147,8 +147,10 @@ void maximize() {
 
 }
 
-void close_window() {
-
+void destroy_window() {
+  PostMessage(showWndList->focused(), WM_CLOSE, 0, 0);
+  showWndList->erase();
+  arrange[layout]();
 }
 
 void quit() {
