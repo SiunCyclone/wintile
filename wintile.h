@@ -105,6 +105,7 @@ class WindowList final {
     HWND focused();
     HWND next();
     HWND prev();
+    Window& frontW();
     Window& focusedW();
     Window& nextW();
     Window& prevW();

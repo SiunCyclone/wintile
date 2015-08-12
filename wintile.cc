@@ -54,6 +54,10 @@ HWND WindowList::prev() {
   return prevW().getHandle();
 }
 
+Window& WindowList::frontW() {
+  return *_list.begin();
+}
+
 Window& WindowList::focusedW() {
   return *_itr;
 }
@@ -117,6 +121,9 @@ stdfunc move_window(const int dist) {
     } else if (dist == -1) {
       showWndList->focusedW() = showWndList->prevW();
       showWndList->nextW().setRect(tmpRect);
+    } else if (dist == 0) {
+      showWndList->focusedW() = showWndList->frontW();
+      showWndList->focusedW().setRect(tmpRect);
     }
     auto wnd = showWndList->focusedW();
     auto wndRect = wnd.getRect();
@@ -126,7 +133,11 @@ stdfunc move_window(const int dist) {
       tmp.setRect(showWndList->nextW().getRect());
     else if (dist == -1)
       tmp.setRect(showWndList->prevW().getRect());
-    showWndList->focusedW() = tmp;
+    else if (dist == 0) {
+      showWndList->init();
+      tmp.setRect(showWndList->frontW().getRect());
+    }
+    (dist == 0) ? showWndList->frontW() = tmp : showWndList->focusedW() = tmp;
     tmpRect = tmp.getRect();
     MoveWindow(tmp.getHandle(), tmpRect.x, tmpRect.y, tmpRect.w, tmpRect.h, TRUE);
   };
