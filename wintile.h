@@ -24,7 +24,6 @@ void maximize();
 void destroy_window();
 void quit();
 
-stdfunc call_layout(const stdfunc&);
 void tile_layout();
 void spiral_layout();
 
@@ -41,9 +40,9 @@ HHOOK hhk;
 HWND clientWnd;
 
 std::string layout = "TILE";
-static std::map<std::string, stdfunc> arrange = {
-  { "TILE",    call_layout( tile_layout   )},
-  { "SPIRAL",  call_layout( spiral_layout )}
+static std::map<std::string, void (*)()> arrange = {
+  { "TILE",    tile_layout   },
+  { "SPIRAL",  spiral_layout }
 };
 
 static std::map<unsigned int, bool> isPressed = {

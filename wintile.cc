@@ -157,12 +157,6 @@ void quit() {
   PostQuitMessage(0);
 }
 
-stdfunc call_layout(const stdfunc& func) {
-  return [=] {
-    func();
-  };
-}
-
 void tile_layout() {
   size_t length = showWndList->length();
   auto width = WINDOW_WIDTH / 2;
