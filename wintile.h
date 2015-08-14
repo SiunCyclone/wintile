@@ -20,6 +20,7 @@ using stdfunc = std::function<void()>;
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc move_window(const int);
+stdfunc open_app(const char*);
 void maximize();
 void destroy_window();
 void quit();
@@ -50,13 +51,17 @@ static std::map<unsigned int, bool> isPressed = {
   { SUBMODKEY,  false }
 };
 
+char terminalPath[256] = "\"C:/msys32/msys2_shell.bat\"";
+char browserPath[256] = "\"C:/Program Files/Mozilla Firefox/firefox.exe\"";
 static std::map<unsigned int, stdfunc> callFunc = {
-  { 'J',  func_switcher( move_focus(1),   move_window(1)  )},
-  { 'K',  func_switcher( move_focus(-1),  move_window(-1) )},
-  { 'A',                 move_window(0)                    },
-  { 'M',                 maximize                          },
-  { 'D',  func_switcher( []{},            destroy_window  )},
-  { 'Q',                 quit                              }
+  { 'J',        func_switcher( move_focus(1),         move_window(1)         )},
+  { 'K',        func_switcher( move_focus(-1),        move_window(-1)        )},
+  { 'A',                       move_window(0)                                 },
+  { VK_RETURN,  func_switcher( []{},                  open_app(terminalPath) )},
+  { 'I',                       open_app(browserPath)                          },
+  { 'M',                       maximize                                       },
+  { 'D',        func_switcher( []{},                  destroy_window         )},
+  { 'Q',                       quit                                           }
 };
 
 /* window */
@@ -84,7 +89,6 @@ struct WindowRect {
 
 class Window final {
   public:
-    Window(){}
     Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state){}
     HWND getHandle() const;
     WindowState getState() const;

@@ -143,6 +143,12 @@ stdfunc move_window(const int dist) {
   };
 }
 
+stdfunc open_app(const char* path) {
+  return [=] {
+    system(path);
+  };
+}
+
 void maximize() {
 
 }
