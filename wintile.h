@@ -64,6 +64,13 @@ static std::map<unsigned int, stdfunc> callFunc = {
   { 'Q',                       quit                                           }
 };
 
+auto convertUTF16toUTF8 = [=] (const wchar_t* wbuf, const unsigned int maxSize) -> std::string {
+  int bufSize = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, nullptr, 0, nullptr, nullptr);
+  char buf[maxSize];
+  WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, bufSize, nullptr, nullptr);
+  return std::string(buf);
+};
+
 /* window */
 enum struct WindowState {
   NORMAL,

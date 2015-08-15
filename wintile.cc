@@ -218,45 +218,31 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(hhk, code, wParam, lParam);
 }
 
-
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
   if (IsWindowVisible(hWnd)) {
-    static const unsigned int strMaxSize = 256;
-    static wchar_t wbuf[strMaxSize];
-    static char buf[strMaxSize];
-    static std::string str;
+    const unsigned int strMaxSize = 256;
+    wchar_t wbuf[strMaxSize];
+    std::string str;
 
-    static auto isAddWnd = [=](stdfunc func) -> bool {
-      static auto convertUTF16toUTF8 = [=] {
-        int bufSize = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, nullptr, 0, nullptr, nullptr);
-        WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, bufSize, nullptr, nullptr);
-        str = buf;
-      };
+    GetWindowText(hWnd, wbuf, strMaxSize);
+    str = convertUTF16toUTF8(wbuf, strMaxSize);
+    if (str == "")
+      return TRUE;
 
-      func();
-      convertUTF16toUTF8();
-      if (str == "" || str == "Progman" || str == "MainWindowClass")
-        return false;
+    print(str);
 
-      print(str);
-
-      return true;
-    };
-
-    static auto windowText = [&] { GetWindowText(hWnd, wbuf, strMaxSize); };
-    static auto className = [&] { GetClassName(hWnd, wbuf, strMaxSize); };
-    if (!isAddWnd(windowText) || !isAddWnd(className))
+    GetClassName(hWnd, wbuf, strMaxSize);
+    str = convertUTF16toUTF8(wbuf, strMaxSize);
+    if (str == "Progman" || str == "MainWindowClass")
       return TRUE;
 
     print(hWnd);
     print("");
 
-    if (IsIconic(hWnd)) {
+    if (IsIconic(hWnd))
       hideWndList->push_back(Window(hWnd, WindowState::ICON));
-      return TRUE;
-    }
-
-    showWndList->push_back(Window(hWnd, WindowState::NORMAL));
+    else
+      showWndList->push_back(Window(hWnd, WindowState::NORMAL));
   }
 
   return TRUE;
