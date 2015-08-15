@@ -7,14 +7,13 @@
 #include <functional>
 #include <tuple>
 #include <memory>
-#include <clocale>
 #include <windows.h>
 
 #include "wintile.h"
 
 template <class T>
 void print(T str) {
-  std::wcout << str << std::endl;
+  std::cout << str << std::endl;
 }
 
 /* class implementations */
@@ -222,22 +221,33 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
   if (IsWindowVisible(hWnd)) {
-    static wchar_t buf[128];
-    std::wstring str;
+    static const unsigned int strMaxSize = 256;
+    static wchar_t wbuf[strMaxSize];
+    static char buf[strMaxSize];
+    static std::string str;
 
-    GetWindowText(hWnd, buf, 128);
-    str = buf;
-    if (str == L"")
+    static auto isAddWnd = [=](stdfunc func) -> bool {
+      static auto convertUTF16toUTF8 = [=] {
+        int bufSize = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, nullptr, 0, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, buf, bufSize, nullptr, nullptr);
+        str = buf;
+      };
+
+      func();
+      convertUTF16toUTF8();
+      if (str == "" || str == "Progman" || str == "MainWindowClass")
+        return false;
+
+      print(str);
+
+      return true;
+    };
+
+    static auto windowText = [&] { GetWindowText(hWnd, wbuf, strMaxSize); };
+    static auto className = [&] { GetClassName(hWnd, wbuf, strMaxSize); };
+    if (!isAddWnd(windowText) || !isAddWnd(className))
       return TRUE;
 
-    std::wstring title = str;
-
-    GetClassName(hWnd, buf, 128);
-    str = buf;
-    if (str == L"Progman" || str == L"MainWindowClass")
-      return TRUE;
-
-    print(title);
     print(hWnd);
     print("");
 
@@ -327,7 +337,6 @@ void get_all_window() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
-  std::setlocale(LC_ALL, "");
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
