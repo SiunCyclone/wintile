@@ -6,7 +6,6 @@
 #include <functional>
 #include <tuple>
 #include <memory>
-#include <clocale>
 #include <windows.h>
 
 static const unsigned int MODKEY    = VK_NONCONVERT;

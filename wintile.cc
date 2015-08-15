@@ -143,9 +143,7 @@ stdfunc move_window(const int dist) {
 }
 
 stdfunc open_app(const char* path) {
-  return [=] {
-    system(path);
-  };
+  return [=] { system(path); };
 }
 
 void maximize() {
@@ -250,22 +248,11 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
 
 bool start_hook(HINSTANCE hInst) {
   hhk = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
-
-  if (hhk == nullptr) {
-    print("Error in start_hook() : hhk is nullptr");
-    return false;
-  }
-
-  return true;
+  return (hhk == nullptr) ? false : true;
 }
 
 bool stop_hook() {
-  if (UnhookWindowsHookEx(hhk) == 0) {
-    print("Error in stop_hook()");
-    return false;
-  }
-
-  return true;
+  return (UnhookWindowsHookEx(hhk) == 0) ? false : true;
 }
 
 void show_taskbar() {
