@@ -8,10 +8,10 @@
 #include <memory>
 #include <windows.h>
 
-static const unsigned int MODKEY    = VK_NONCONVERT;
-static const unsigned int SUBMODKEY = VK_LSHIFT;
-static const unsigned int WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
-static const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
+const unsigned int MODKEY    = VK_NONCONVERT;
+const unsigned int SUBMODKEY = VK_LSHIFT;
+const unsigned int WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
+const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 
 using stdfunc = std::function<void()>;
 
@@ -85,26 +85,26 @@ HHOOK hhk;
 HWND clientWnd;
 
 std::string layout = "TILE";
-static std::map<std::string, void (*)()> arrange = {
+std::map<std::string, void (*)()> arrange = {
   { "TILE",    tile_layout   },
   { "SPIRAL",  spiral_layout }
 };
 
-static std::map<unsigned int, bool> isPressed = {
+std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
   { SUBMODKEY,  false }
 };
 
 char terminalPath[256] = "\"C:/msys32/msys2_shell.bat\"";
 char browserPath[256] = "\"C:/Program Files/Mozilla Firefox/firefox.exe\"";
-static std::map<unsigned int, stdfunc> callFunc = {
+std::map<unsigned int, stdfunc> callFunc = {
   { 'J',        func_switcher( move_focus(1),         swap_window(1)         )},
   { 'K',        func_switcher( move_focus(-1),        swap_window(-1)        )},
-  { 'A',                       swap_window(0)                                 },
+  { 'D',        func_switcher( []{},                  destroy_window         )},
   { VK_RETURN,  func_switcher( []{},                  open_app(terminalPath) )},
+  { 'A',                       swap_window(0)                                 },
   { 'I',                       open_app(browserPath)                          },
   { 'M',                       maximize                                       },
-  { 'D',        func_switcher( []{},                  destroy_window         )},
   { 'Q',                       quit                                           }
 };
 

@@ -154,7 +154,7 @@ void quit() {
 
 void tile_layout() {
   size_t length = showWndList->length();
-  auto width = WINDOW_WIDTH / 2;
+  static auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
   showWndList->init();
@@ -207,7 +207,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
   if (IsWindowVisible(hWnd)) {
-    const unsigned int strMaxSize = 256;
+    static const unsigned int strMaxSize = 256;
     wchar_t wbuf[strMaxSize];
     std::string str;
 
