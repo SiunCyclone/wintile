@@ -25,16 +25,16 @@ WindowState Window::getState() const {
   return _state;
 }
 
+RECT Window::getRect() const {
+  return _rect;
+}
+
 void Window::setState(const WindowState& state) {
   _state = state;
 }
 
-WindowRect Window::getRect() const {
-  return _rect;
-}
-
-void Window::setRect(const WindowRect& rect) {
-  _rect = rect;
+void Window::setRect() {
+  GetWindowRect(_handle, &_rect);
 }
 
 void WindowList::init() {
@@ -110,13 +110,15 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    auto handle = (dist == 1) ? showWndList->next() : showWndList->prev();
+    auto handle = (dist == 1) ?  showWndList->next() :
+                  (dist == -1) ? showWndList->prev() :
+                                 showWndList->focused();
     SetForegroundWindow(handle);
     SetFocus(handle);
   };
 };
 
-stdfunc move_window(const int dist) {
+stdfunc swap_window(const int dist) {
   return [=] {
     auto& a = showWndList->focusedW();
     auto& b = (dist == 1)  ? showWndList->nextW() :
@@ -125,11 +127,8 @@ stdfunc move_window(const int dist) {
     auto aRect = a.getRect();
     auto bRect = b.getRect();
 
-    a.setRect(bRect);
-    b.setRect(aRect);
-
-    MoveWindow(a.getHandle(), bRect.x, bRect.y, bRect.w, bRect.h, TRUE);
-    MoveWindow(b.getHandle(), aRect.x, aRect.y, aRect.w, aRect.h, TRUE);
+    moveWindow(a, bRect.left, bRect.top, bRect.right-bRect.left, bRect.bottom-bRect.top, TRUE);
+    moveWindow(b, aRect.left, aRect.top, aRect.right-aRect.left, aRect.bottom-aRect.top, TRUE);
 
     showWndList->swap(a, b);
   };
@@ -159,13 +158,10 @@ void tile_layout() {
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
   showWndList->init();
-  MoveWindow(showWndList->focused(), 0, 0, width, WINDOW_HEIGHT, TRUE);
-  showWndList->focusedW().setRect(WindowRect(0, 0, width, WINDOW_HEIGHT));
+  moveWindow(showWndList->focusedW(), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
-  for (size_t i=1; i<length; ++i) {
-    MoveWindow(showWndList->next(), width, (i-1)*height, width, height, TRUE);
-    showWndList->focusedW().setRect(WindowRect(width, (i-1)*height, width, height));
-  }
+  for (size_t i=1; i<length; ++i)
+    moveWindow(showWndList->nextW(), width, (i-1)*height, width, height, TRUE);
 
   move_focus(1)();
 }
