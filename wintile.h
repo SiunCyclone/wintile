@@ -114,13 +114,14 @@ class WindowList final {
     HWND focused();
     HWND next();
     HWND prev();
-    Window& frontW();
     Window& focusedW();
+    Window& frontW();
     Window& nextW();
     Window& prevW();
     void push_back(const Window&);
     void insert(const Window&);
     void erase();
+    void swap(Window&, Window&);
     size_t length() const;
 
   private:

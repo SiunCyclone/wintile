@@ -53,12 +53,13 @@ HWND WindowList::prev() {
   return prevW().getHandle();
 }
 
-Window& WindowList::frontW() {
-  return *_list.begin();
-}
-
 Window& WindowList::focusedW() {
   return *_itr;
+}
+
+Window& WindowList::frontW() {
+  _itr = _list.begin();
+  return _list.front();
 }
 
 Window& WindowList::nextW() {
@@ -90,6 +91,12 @@ void WindowList::erase() {
   --_length;
 }
 
+void WindowList::swap(Window& a, Window& b) {
+  auto tmp = a;
+  a = b;
+  b = tmp;
+}
+
 size_t WindowList::length() const {
   return _length;
 }
@@ -111,34 +118,20 @@ stdfunc move_focus(const int dist) {
 
 stdfunc move_window(const int dist) {
   return [=] {
-    auto tmp = showWndList->focusedW();
-    auto tmpRect = tmp.getRect();
+    auto& a = showWndList->focusedW();
+    auto& b = (dist == 1)  ? showWndList->nextW() :
+              (dist == -1) ? showWndList->prevW() :
+                             showWndList->frontW();
+    auto aRect = a.getRect();
+    auto bRect = b.getRect();
 
-    if (dist == 1) {
-      showWndList->focusedW() = showWndList->nextW();
-      showWndList->prevW().setRect(tmpRect);
-    } else if (dist == -1) {
-      showWndList->focusedW() = showWndList->prevW();
-      showWndList->nextW().setRect(tmpRect);
-    } else if (dist == 0) {
-      showWndList->focusedW() = showWndList->frontW();
-      showWndList->focusedW().setRect(tmpRect);
-    }
-    auto wnd = showWndList->focusedW();
-    auto wndRect = wnd.getRect();
-    MoveWindow(wnd.getHandle(), wndRect.x, wndRect.y, wndRect.w, wndRect.h, TRUE);
+    a.setRect(bRect);
+    b.setRect(aRect);
 
-    if (dist == 1)
-      tmp.setRect(showWndList->nextW().getRect());
-    else if (dist == -1)
-      tmp.setRect(showWndList->prevW().getRect());
-    else if (dist == 0) {
-      showWndList->init();
-      tmp.setRect(showWndList->frontW().getRect());
-    }
-    (dist == 0) ? showWndList->frontW() = tmp : showWndList->focusedW() = tmp;
-    tmpRect = tmp.getRect();
-    MoveWindow(tmp.getHandle(), tmpRect.x, tmpRect.y, tmpRect.w, tmpRect.h, TRUE);
+    MoveWindow(a.getHandle(), bRect.x, bRect.y, bRect.w, bRect.h, TRUE);
+    MoveWindow(b.getHandle(), aRect.x, aRect.y, aRect.w, aRect.h, TRUE);
+
+    showWndList->swap(a, b);
   };
 }
 
