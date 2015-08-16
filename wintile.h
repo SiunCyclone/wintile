@@ -15,8 +15,8 @@ const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 using stdfunc = std::function<void()>;
 
 /* function declarations */
-template<class Itr, class List, class R> R& next_itr_cir(Itr&, List&);
-template<class Itr, class List, class R> R& prev_itr_cir(Itr&, List&);
+template<typename R, typename List> R& next_itr_cir(typename List::iterator&, List&);
+template<typename R, typename List> R& prev_itr_cir(typename List::iterator&, List&);
 
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
@@ -24,6 +24,8 @@ stdfunc swap_window(const int);
 stdfunc open_app(const char*);
 void maximize();
 void destroy_window();
+void call_next_layout();
+void call_prev_layout();
 void quit();
 
 void tile_layout();
@@ -91,6 +93,7 @@ std::map<std::string, void (*)()> arrange = {
   { "TILE",    tile_layout   },
   { "SPIRAL",  spiral_layout }
 };
+std::map<std::string, void (*)()>::iterator arrangeItr = arrange.begin();
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
@@ -104,6 +107,7 @@ std::map<unsigned int, stdfunc> callFunc = {
   { 'K',        func_switcher( move_focus(-1),        swap_window(-1)        )},
   { 'D',        func_switcher( []{},                  destroy_window         )},
   { VK_RETURN,  func_switcher( []{},                  open_app(terminalPath) )},
+  { VK_SPACE,   func_switcher( call_next_layout,      call_prev_layout       )},
   { 'A',                       swap_window(0)                                 },
   { 'I',                       open_app(browserPath)                          },
   { 'M',                       maximize                                       },

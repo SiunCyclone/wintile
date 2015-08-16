@@ -10,7 +10,7 @@
 
 #include "wintile.h"
 
-template <class T>
+template <typename T>
 void print(T str) {
   std::cout << str << std::endl;
 }
@@ -62,11 +62,11 @@ Window& WindowList::frontW() {
 }
 
 Window& WindowList::nextW() {
-  return next_itr_cir<std::list<Window>::iterator, std::list<Window>, Window>(_itr, _list);
+  return next_itr_cir<Window>(_itr, _list);
 }
 
 Window& WindowList::prevW() {
-  return prev_itr_cir<std::list<Window>::iterator, std::list<Window>, Window>(_itr, _list);
+  return prev_itr_cir<Window>(_itr, _list);
 }
 
 void WindowList::push_back(const Window& window) {
@@ -95,16 +95,16 @@ size_t WindowList::length() const {
 }
 
 /* function implementations */
-template<class Itr, class List, class R>
-R& next_itr_cir(Itr& itr, List& list) {
+template<typename R, typename List>
+R& next_itr_cir(typename List::iterator& itr, List& list) {
   ++itr;
   if (itr == list.end())
     itr = list.begin();
   return *itr;
 }
 
-template<class Itr, class List, class R>
-R& prev_itr_cir(Itr& itr, List& list) {
+template<typename R, typename List>
+R& prev_itr_cir(typename List::iterator& itr, List& list) {
   if (itr == list.begin())
     itr = list.end();
   --itr;
@@ -157,6 +157,14 @@ void destroy_window() {
   arrange[layout]();
 }
 
+void call_next_layout() {
+  next_itr_cir<std::pair<const std::string, void (*)()>>(arrangeItr, arrange).second();
+}
+
+void call_prev_layout() {
+  prev_itr_cir<std::pair<const std::string, void (*)()>>(arrangeItr, arrange).second();
+}
+
 void quit() {
   PostQuitMessage(0);
 }
@@ -176,7 +184,7 @@ void tile_layout() {
 }
 
 void spiral_layout() {
-
+  print("spiral");
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
