@@ -179,7 +179,6 @@ void quit() {
 }
 
 void tileleft_impl() {
-  print("tileleft");
   size_t length = showWndList->length();
   static auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
@@ -194,7 +193,27 @@ void tileleft_impl() {
 }
 
 void spiral_impl() {
-  print("spiral");
+  size_t length = showWndList->length();
+  static auto mainWidth = WINDOW_WIDTH / 2;
+
+  showWndList->init();
+  moveWindow(showWndList->focusedW(), 0, 0, mainWidth, WINDOW_HEIGHT, TRUE);
+
+  auto width = WINDOW_WIDTH / 2;
+  auto height = WINDOW_HEIGHT;
+  auto x = width;
+  auto y = 0;
+
+  for (size_t i=1; i<length; ++i) {
+    if (i != length - 1)
+      (i % 2 == 0) ? width /= 2 : height /= 2;
+
+    moveWindow(showWndList->nextW(), x, y, width, height, TRUE);
+
+    (i % 2 == 0) ? x += width : y += height;
+  }
+
+  move_focus(1)();
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
