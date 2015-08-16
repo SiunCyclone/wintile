@@ -4,7 +4,6 @@
 #include <map>
 #include <list>
 #include <functional>
-#include <tuple>
 #include <memory>
 #include <windows.h>
 
@@ -16,6 +15,9 @@ const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 using stdfunc = std::function<void()>;
 
 /* function declarations */
+template<class Itr, class List, class R> R& next_itr_cir(Itr&, List&);
+template<class Itr, class List, class R> R& prev_itr_cir(Itr&, List&);
+
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc swap_window(const int);

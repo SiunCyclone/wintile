@@ -5,7 +5,6 @@
 #include <map>
 #include <list>
 #include <functional>
-#include <tuple>
 #include <memory>
 #include <windows.h>
 
@@ -63,17 +62,11 @@ Window& WindowList::frontW() {
 }
 
 Window& WindowList::nextW() {
-  ++_itr;
-  if (_itr == _list.end())
-    _itr = _list.begin();
-  return *_itr;
+  return next_itr_cir<std::list<Window>::iterator, std::list<Window>, Window>(_itr, _list);
 }
 
 Window& WindowList::prevW() {
-  if (_itr == _list.begin())
-    _itr = _list.end();
-  --_itr;
-  return *_itr;
+  return prev_itr_cir<std::list<Window>::iterator, std::list<Window>, Window>(_itr, _list);
 }
 
 void WindowList::push_back(const Window& window) {
@@ -102,6 +95,22 @@ size_t WindowList::length() const {
 }
 
 /* function implementations */
+template<class Itr, class List, class R>
+R& next_itr_cir(Itr& itr, List& list) {
+  ++itr;
+  if (itr == list.end())
+    itr = list.begin();
+  return *itr;
+}
+
+template<class Itr, class List, class R>
+R& prev_itr_cir(Itr& itr, List& list) {
+  if (itr == list.begin())
+    itr = list.end();
+  --itr;
+  return *itr;
+}
+
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
     !isPressed[SUBMODKEY] ? func() : sub_func();
