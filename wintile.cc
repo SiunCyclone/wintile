@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <vector>
 #include <functional>
 #include <memory>
 #include <windows.h>
@@ -94,6 +95,14 @@ size_t WindowList::length() const {
   return _length;
 }
 
+LayoutType Layout::getName() {
+  return _name;
+}
+
+void Layout::arrange() {
+  _func();
+}
+
 /* function implementations */
 template<typename R, typename List>
 R& next_itr_cir(typename List::iterator& itr, List& list) {
@@ -154,22 +163,23 @@ void maximize() {
 void destroy_window() {
   PostMessage(showWndList->focused(), WM_CLOSE, 0, 0);
   showWndList->erase();
-  arrange[layout]();
+  (*layoutsItr).arrange();
 }
 
 void call_next_layout() {
-  next_itr_cir<std::pair<const std::string, void (*)()>>(arrangeItr, arrange).second();
+  next_itr_cir<Layout>(layoutsItr, layouts).arrange();
 }
 
 void call_prev_layout() {
-  prev_itr_cir<std::pair<const std::string, void (*)()>>(arrangeItr, arrange).second();
+  prev_itr_cir<Layout>(layoutsItr, layouts).arrange();
 }
 
 void quit() {
   PostQuitMessage(0);
 }
 
-void tile_layout() {
+void tileleft_impl() {
+  print("tileleft");
   size_t length = showWndList->length();
   static auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
@@ -183,7 +193,7 @@ void tile_layout() {
   move_focus(1)();
 }
 
-void spiral_layout() {
+void spiral_impl() {
   print("spiral");
 }
 
@@ -316,10 +326,14 @@ void get_all_window() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
+  layouts.emplace_back( LayoutType::TILELEFT,  tileleft_impl );
+  layouts.emplace_back( LayoutType::SPIRAL,    spiral_impl   );
+  layoutsItr = layouts.begin();
+
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
-  arrange[layout]();
+  layouts.front().arrange();
   start_hook(hInstance);
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {

@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <vector>
 #include <functional>
 #include <memory>
 #include <windows.h>
@@ -28,8 +29,8 @@ void call_next_layout();
 void call_prev_layout();
 void quit();
 
-void tile_layout();
-void spiral_layout();
+void tileleft_impl();
+void spiral_impl();
 
 bool start_hook(HINSTANCE, HWND);
 bool stop_hook();
@@ -38,7 +39,7 @@ void hide_taskbar();
 void create_window(HINSTANCE);
 void get_all_window();
 
-/* window declarations */
+/* class declarations */
 enum struct WindowState {
   NORMAL,
   ICON,
@@ -83,17 +84,28 @@ class WindowList final {
     std::list<Window>::iterator _itr;
 };
 
+enum struct LayoutType {
+  TILELEFT,
+  SPIRAL
+};
+
+class Layout final {
+  public:
+    Layout(const LayoutType& name, const stdfunc& func) : _name(name), _func(func){}
+    LayoutType getName();
+    void arrange();
+
+  private:
+    LayoutType _name;
+    stdfunc _func;
+};
+
 /* variables */
 HHOOK hhk;
-
 HWND clientWnd;
 
-std::string layout = "TILE";
-std::map<std::string, void (*)()> arrange = {
-  { "TILE",    tile_layout   },
-  { "SPIRAL",  spiral_layout }
-};
-std::map<std::string, void (*)()>::iterator arrangeItr = arrange.begin();
+std::vector<Layout> layouts;
+std::vector<Layout>::iterator layoutsItr;
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
