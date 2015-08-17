@@ -1,3 +1,6 @@
+#ifndef WINTILE_H
+#define WINTILE_H
+
 #include <iostream>
 
 #include <string>
@@ -140,4 +143,6 @@ auto moveWindow = [=] (Window& window, const int x, const int y, const int w, co
 
 std::unique_ptr<WindowList> showWndList(new WindowList);
 std::unique_ptr<WindowList> hideWndList(new WindowList);
+
+#endif /* WINTILE_H */
 
