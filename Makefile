@@ -1,23 +1,24 @@
-CC = g++
-CFLAGS = -Wall -std=c++11 -mwindows
-TARGETS = wintile
+CC = clang++
+CFLAGS = -Wall -std=c++11
+EXE = wintile.exe
 
 .PHONY: all
-all: $(TARGETS)
+all: $(EXE)
 
-wintile: wintile.o
-	$(CC) $< -o $@
+wintile.exe: wintile.o
+	$(CC) $< -o $@ -mwindows
+
+wintile.o: wintile.cc wintile.h
+	$(CC) $(CFLAGS) -c $<
 
 debug: wintile.cc wintile.h
 	$(CC) $(CFLAGS) -S -g $<
+	$(CC) $(CFLAGS) -c -g $<
 
 release: wintile.cc wintile.h
-	$(CC) $(CFLAGS) -O2 -s $< -o $(TARGETS)
-
-%.o: %.cc %.h
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -O2 -s $< -o $(EXE)
 
 .PHONY: clean
 clean:
-	rm *.o
+	rm *.o *.s
 
