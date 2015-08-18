@@ -70,8 +70,8 @@ Window& WindowList::prevW() {
   return prev_itr_cir<Window>(_itr, _list);
 }
 
-void WindowList::push_back(const Window& window) {
-  _list.push_back(window);
+void WindowList::emplace_back(const HWND& hWnd, const WindowState& state) {
+  _list.emplace_back(hWnd, state);
   ++_length;
 }
 
@@ -273,9 +273,9 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print("");
 
     if (IsIconic(hWnd))
-      hideWndList->push_back(Window(hWnd, WindowState::ICON));
+      hideWndList->emplace_back(hWnd, WindowState::ICON);
     else
-      showWndList->push_back(Window(hWnd, WindowState::NORMAL));
+      showWndList->emplace_back(hWnd, WindowState::NORMAL);
   }
 
   return TRUE;

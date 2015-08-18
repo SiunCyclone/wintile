@@ -75,7 +75,7 @@ class WindowList final {
     Window& frontW();
     Window& nextW();
     Window& prevW();
-    void push_back(const Window&);
+    void emplace_back(const HWND&, const WindowState&);
     void insert(const Window&);
     void erase();
     void swap(Window&, Window&);
