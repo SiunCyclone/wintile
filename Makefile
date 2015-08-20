@@ -5,18 +5,27 @@ EXE = wintile.exe
 .PHONY: all
 all: $(EXE)
 
-wintile.exe: wintile.o
-	$(CC) $< -o $@ -mwindows
+wintile.exe: wintile.o wndhook.dll
+	$(CC) $(CFLAGS) -L./ -lwndhook $< -o $@ -mwindows
 
-wintile.o: wintile.cc wintile.h
+wintile.o: wintile.cc wintile.h wndhookdll.h
 	$(CC) $(CFLAGS) -c $<
 
-debug: wintile.cc wintile.h
-	$(CC) $(CFLAGS) -S -g $<
-	$(CC) $(CFLAGS) -c -g $<
+wndhook.dll: wndhookdll.o
+	$(CC) $(CFLAGS) -shared $< -o $@
 
-release: wintile.cc wintile.h
-	$(CC) $(CFLAGS) -O2 -s $< -o $(EXE)
+wndhookdll.o: wndhookdll.cc wndhookdll.h
+	$(CC) $(CFLAGS) -c $<
+
+debug: wintile.cc wndhookdll.cc wintile.h wndhookdll.h
+	$(CC) $(CFLAGS) -S -g wintile.cc wndhookdll.cc
+	$(CC) $(CFLAGS) -c -g wintile.cc wndhookdll.cc
+	$(CC) $(CFLAGS) -shared wndhookdll.o -o wndhook.dll
+	$(CC) $(CFLAGS) -L./ -lwndhook wintile.o -o $(EXE) -mwindows
+
+release: wintile.cc wndhookdll.cc wintile.h wndhookdll.h
+	$(CC) $(CFLAGS) -shared -O2 -s wndhookdll.cc -o wndhook.dll
+	$(CC) $(CFLAGS) -L./ -lwndhook -O2 -s wintile.cc -o $(EXE) -mwindows
 
 .PHONY: clean
 clean:

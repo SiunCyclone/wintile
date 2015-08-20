@@ -104,7 +104,7 @@ class Layout final {
 };
 
 /* variables */
-HHOOK hhk;
+HHOOK hkKey = 0;
 HWND clientWnd;
 
 std::vector<Layout> layouts;

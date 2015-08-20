@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #include "wintile.h"
+#include "wndhookdll.h"
 
 template <typename T>
 void print(T str) {
@@ -221,6 +222,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_KEYDOWN:
       callFunc[wParam]();
       break;
+    case WM_APP:
+      print("app");
+      break;
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
@@ -230,16 +234,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
-    return CallNextHookEx(hhk, code, wParam, lParam);
-
-  if (code == HC_ACTION) {
+    return CallNextHookEx(hkKey, code, wParam, lParam);
+  else if (code == HC_ACTION) {
     KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
     DWORD vkCode = tmp->vkCode;
     bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
     if (vkCode == MODKEY || vkCode == SUBMODKEY) {
       isPressed[vkCode] = isKeyDown;
-      return CallNextHookEx(hhk, code, wParam, lParam);
+      return CallNextHookEx(hkKey, code, wParam, lParam);
     }
 
     if (isPressed[MODKEY] && isKeyDown && callFunc.count(vkCode) == 1) {
@@ -248,7 +251,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     }
   }
 
-  return CallNextHookEx(hhk, code, wParam, lParam);
+  return CallNextHookEx(hkKey, code, wParam, lParam);
 }
 
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
@@ -282,12 +285,23 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
 }
 
 bool start_hook(HINSTANCE hInst) {
-  hhk = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
-  return (hhk == nullptr) ? false : true;
+  hkKey = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
+
+  if (hkKey == nullptr) {
+    print("hkKey is nullptr");
+    return false;
+  }
+
+  return true;
 }
 
 bool stop_hook() {
-  return (UnhookWindowsHookEx(hhk) == 0) ? false : true;
+  if (UnhookWindowsHookEx(hkKey) == 0) {
+    print("Unhook hkKey is failed");
+    return false;
+  }
+
+  return true;
 }
 
 void show_taskbar() {
@@ -328,6 +342,8 @@ void create_window(HINSTANCE hInstance) {
 
   if (clientWnd == nullptr)
     return;
+
+  start_wndproc_hook(clientWnd);
 }
 
 void get_all_window() {
@@ -345,8 +361,8 @@ void get_all_window() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
-  layouts.emplace_back( LayoutType::TILELEFT,  tileleft_impl );
   layouts.emplace_back( LayoutType::SPIRAL,    spiral_impl   );
+  layouts.emplace_back( LayoutType::TILELEFT,  tileleft_impl );
   layoutsItr = layouts.begin();
 
   create_window(hInstance);
@@ -361,6 +377,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   stop_hook();
+  stop_wndproc_hook();
+  for (size_t i=0; i<showWndList->length(); ++i)
+    move_focus(1)();
+
   //show_taskbar();
 
   return msg.wParam;
