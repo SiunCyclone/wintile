@@ -1,22 +1,31 @@
 # Wintile
 
+Wintile is a tiling window manager for windows.
+
 ### Features
 * Simple keyboard manipulation
 * Easily Customize config
 
 ```
-j, k     : Move focus
-S-j, S-k : Move window
-h, l     : Move window (when floating
-S-h, S-l : Resize window
-1~9      : Move virtual desktop
-m        : Maximize
-S-Enter  : Open terminal
-r        : Launcher
-S-d      : Close window
-i        : Open browser
-a        : Set as a main window
-Space    : Change tiling mode
-q        : Quit
+Default Modkey : VK_NONCONVERT(MUHENKAN)
+S-key          : Shift + key
+
+.================================================================.
+| Command  | Behavior                    | Implementation Status |
+|----------|-----------------------------|-----------------------|
+| j, k     | Move focus                  | DONE                  |
+| S-j, S-k | Move window                 | DONE                  |
+| h, l     | Move window (when floating  | x                     |
+| S-h, S-l | Resize window               | x                     |
+| 1~9      | Move virtual desktop        | x                     |
+| m        | Maximize                    | x                     |
+| S-Enter  | Open terminal               | DONE                  |
+| r        | Launcher                    | x                     |
+| S-d      | Close window                | DONE                  |
+| i        | Open browser                | DONE                  |
+| a        | Set as a main window        | DONE                  |
+| Space    | Change tiling mode          | DONE                  |
+| q        | Quit                        | DONE                  |
+.================================================================.
 ```
 

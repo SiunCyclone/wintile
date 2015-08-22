@@ -25,11 +25,9 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
     return CallNextHookEx(hookWnd, code, wParam, lParam);
   else if (code == HSHELL_WINDOWCREATED) {
-    if (IsWindowVisible((HWND)wParam)) {
-      auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
-      if (hwndTarget != NULL)
-        PostMessage(hwndTarget, WM_APP, wParam, lParam);
-    }
+    auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+    if (hwndTarget != NULL)
+      PostMessage(hwndTarget, WM_APP, wParam, lParam);
   }
 
   return CallNextHookEx(hookWnd, code, wParam, lParam);
