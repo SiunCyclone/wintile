@@ -57,7 +57,7 @@ class Window final {
     WindowState getState() const;
     RECT getRect() const;
     void setState(const WindowState&);
-    void setRect();
+    void updateRect();
 
   private:
     HWND _handle;
@@ -139,7 +139,7 @@ auto convertUTF16toUTF8 = [] (const wchar_t* wbuf, const unsigned int maxSize) -
 
 auto moveWindow = [] (Window& window, const int x, const int y, const int w, const int h, const BOOL flag) {
   MoveWindow(window.getHandle(), x, y, w, h, flag);
-  window.setRect();
+  window.updateRect();
 };
 
 std::unique_ptr<WindowList> showWndList(new WindowList);

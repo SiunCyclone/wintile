@@ -34,7 +34,7 @@ void Window::setState(const WindowState& state) {
   _state = state;
 }
 
-void Window::setRect() {
+void Window::updateRect() {
   GetWindowRect(_handle, &_rect);
 }
 
