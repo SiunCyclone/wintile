@@ -18,7 +18,7 @@ S-key          : Shift + key
 | h, l     | Move window (when floating  | x                     |
 | S-h, S-l | Resize window               | x                     |
 | 1~9      | Move virtual desktop        | x                     |
-| m        | Maximize                    | x                     |
+| m        | Maximize                    | DONE                  |
 | S-Enter  | Open terminal               | DONE                  |
 | r        | Launcher                    | x                     |
 | S-d      | Close window                | DONE                  |

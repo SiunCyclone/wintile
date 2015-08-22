@@ -165,7 +165,16 @@ stdfunc open_app(const wchar_t* path) {
 }
 
 void maximize() {
+  static WindowState prevState;
 
+  if (showWndList->focusedW().getState() == WindowState::MAXIMUM) {
+    ShowWindow(showWndList->focused(), SW_RESTORE);
+    showWndList->focusedW().setState(prevState);
+  } else {
+    prevState = showWndList->focusedW().getState();
+    ShowWindow(showWndList->focused(), SW_MAXIMIZE);
+    showWndList->focusedW().setState(WindowState::MAXIMUM);
+  }
 }
 
 void destroy_window() {
