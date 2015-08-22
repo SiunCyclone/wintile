@@ -71,6 +71,11 @@ Window& WindowList::prevW() {
   return prev_itr_cir<Window>(_itr, _list);
 }
 
+void WindowList::emplace_front(const HWND& hWnd, const WindowState& state) {
+  _list.emplace_front(hWnd, state);
+  ++_length;
+}
+
 void WindowList::emplace_back(const HWND& hWnd, const WindowState& state) {
   _list.emplace_back(hWnd, state);
   ++_length;
@@ -224,10 +229,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_KEYDOWN:
       callFunc[wParam]();
       break;
-    case WM_APP:
-      print("app");
+    case WM_APP: {
       print(wParam);
+      showWndList->emplace_front((HWND)wParam, WindowState::NORMAL);
+
+      auto fromId = GetWindowThreadProcessId((HWND)wParam, nullptr);
+      auto toId = GetCurrentThreadId();
+      AttachThreadInput(fromId, toId, TRUE);
+
+      (*layoutsItr).arrange();
       break;
+    }
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
