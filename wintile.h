@@ -25,7 +25,7 @@ template<typename R, typename List> R& prev_itr_cir(typename List::iterator&, Li
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc swap_window(const int);
-stdfunc open_app(const char*);
+stdfunc open_app(const wchar_t*);
 void maximize();
 void destroy_window();
 void call_next_layout();
@@ -104,7 +104,7 @@ class Layout final {
 };
 
 /* variables */
-HHOOK hkKey = 0;
+HHOOK hookKey = 0;
 HWND clientWnd;
 
 std::vector<Layout> layouts;
@@ -115,8 +115,8 @@ std::map<unsigned int, bool> isPressed = {
   { SUBMODKEY,  false }
 };
 
-char terminalPath[256] = "\"C:/msys32/msys2_shell.bat\"";
-char browserPath[256] = "\"C:/Program Files/Mozilla Firefox/firefox.exe\"";
+wchar_t terminalPath[256] = L"\"C:/msys32/msys2_shell.bat\"";
+wchar_t browserPath[256] = L"\"C:/Program Files/Mozilla Firefox/firefox.exe\"";
 std::map<unsigned int, stdfunc> callFunc = {
   { 'J',        func_switcher( move_focus(1),         swap_window(1)         )},
   { 'K',        func_switcher( move_focus(-1),        swap_window(-1)        )},

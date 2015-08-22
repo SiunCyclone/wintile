@@ -5,8 +5,8 @@
 
 #include <windows.h>
 
-DLLAPI bool start_wndproc_hook(HWND);
-DLLAPI bool stop_wndproc_hook();
+DLLAPI bool start_wnd_hook(HWND);
+DLLAPI bool stop_wnd_hook();
 
 #endif /* WNDHOOKDLL_H */
 

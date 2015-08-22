@@ -153,8 +153,10 @@ stdfunc swap_window(const int dist) {
   };
 }
 
-stdfunc open_app(const char* path) {
-  return [=] { system(path); };
+stdfunc open_app(const wchar_t* path) {
+  return [=] {
+    ShellExecute(nullptr, L"open", path, nullptr, nullptr, SW_HIDE);
+  };
 }
 
 void maximize() {
@@ -224,6 +226,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       break;
     case WM_APP:
       print("app");
+      print(wParam);
       break;
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
@@ -234,7 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
-    return CallNextHookEx(hkKey, code, wParam, lParam);
+    return CallNextHookEx(hookKey, code, wParam, lParam);
   else if (code == HC_ACTION) {
     KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
     DWORD vkCode = tmp->vkCode;
@@ -242,7 +245,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
 
     if (vkCode == MODKEY || vkCode == SUBMODKEY) {
       isPressed[vkCode] = isKeyDown;
-      return CallNextHookEx(hkKey, code, wParam, lParam);
+      return CallNextHookEx(hookKey, code, wParam, lParam);
     }
 
     if (isPressed[MODKEY] && isKeyDown && callFunc.count(vkCode) == 1) {
@@ -251,7 +254,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     }
   }
 
-  return CallNextHookEx(hkKey, code, wParam, lParam);
+  return CallNextHookEx(hookKey, code, wParam, lParam);
 }
 
 BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
@@ -285,10 +288,10 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
 }
 
 bool start_hook(HINSTANCE hInst) {
-  hkKey = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
+  hookKey = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
 
-  if (hkKey == nullptr) {
-    print("hkKey is nullptr");
+  if (hookKey == nullptr) {
+    print("hookKey is nullptr");
     return false;
   }
 
@@ -296,8 +299,8 @@ bool start_hook(HINSTANCE hInst) {
 }
 
 bool stop_hook() {
-  if (UnhookWindowsHookEx(hkKey) == 0) {
-    print("Unhook hkKey is failed");
+  if (UnhookWindowsHookEx(hookKey) == 0) {
+    print("Unhook hookKey is failed");
     return false;
   }
 
@@ -343,7 +346,7 @@ void create_window(HINSTANCE hInstance) {
   if (clientWnd == nullptr)
     return;
 
-  start_wndproc_hook(clientWnd);
+  start_wnd_hook(clientWnd);
 }
 
 void get_all_window() {
@@ -377,9 +380,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   stop_hook();
-  stop_wndproc_hook();
-  for (size_t i=0; i<showWndList->length(); ++i)
-    move_focus(1)();
+  stop_wnd_hook();
 
   //show_taskbar();
 
