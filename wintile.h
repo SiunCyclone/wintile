@@ -104,12 +104,27 @@ class Layout final {
     stdfunc _func;
 };
 
+class LayoutList final {
+  public:
+    void init();
+    Layout& focused();
+    Layout& next();
+    Layout& prev();
+    void emplace_back(const LayoutType&, void (*)());
+
+  private:
+    std::vector<Layout> _list;
+    std::vector<Layout>::iterator _itr;
+};
+
 /* variables */
 HHOOK hookKey = 0;
 HWND clientWnd;
 
-std::vector<Layout> layouts;
-std::vector<Layout>::iterator layoutsItr;
+std::unique_ptr<LayoutList> layoutList(new LayoutList);
+
+std::unique_ptr<WindowList> showWndList(new WindowList);
+std::unique_ptr<WindowList> hideWndList(new WindowList);
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
@@ -141,9 +156,6 @@ auto moveWindow = [] (Window& window, const int x, const int y, const int w, con
   MoveWindow(window.getHandle(), x, y, w, h, flag);
   window.updateRect();
 };
-
-std::unique_ptr<WindowList> showWndList(new WindowList);
-std::unique_ptr<WindowList> hideWndList(new WindowList);
 
 #endif /* WINTILE_H */
 

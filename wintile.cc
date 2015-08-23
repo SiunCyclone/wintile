@@ -109,6 +109,26 @@ void Layout::arrange() {
   _func();
 }
 
+void LayoutList::init() {
+  _itr = _list.begin();
+}
+
+Layout& LayoutList::focused() {
+  return *_itr;
+}
+
+Layout& LayoutList::next() {
+  return next_itr_cir<Layout>(_itr, _list);
+}
+
+Layout& LayoutList::prev() {
+  return prev_itr_cir<Layout>(_itr, _list);
+}
+
+void LayoutList::emplace_back(const LayoutType& type, void (*func)()) {
+  _list.emplace_back(type, func);
+}
+
 /* function implementations */
 template<typename R, typename List>
 R& next_itr_cir(typename List::iterator& itr, List& list) {
@@ -182,11 +202,11 @@ void destroy_window() {
 }
 
 void call_next_layout() {
-  next_itr_cir<Layout>(layoutsItr, layouts).arrange();
+  layoutList->next().arrange();
 }
 
 void call_prev_layout() {
-  prev_itr_cir<Layout>(layoutsItr, layouts).arrange();
+  layoutList->prev().arrange();
 }
 
 void quit() {
@@ -247,7 +267,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       } else if (lParam == WM_CLOSE)
         showWndList->erase();
 
-      (*layoutsItr).arrange();
+      layoutList->focused().arrange();
       break;
     }
     default:
@@ -386,14 +406,14 @@ void get_all_window() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
-  layouts.emplace_back( LayoutType::SPIRAL,    spiral_impl   );
-  layouts.emplace_back( LayoutType::TILELEFT,  tileleft_impl );
-  layoutsItr = layouts.begin();
+  layoutList->emplace_back( LayoutType::SPIRAL,    spiral_impl   );
+  layoutList->emplace_back( LayoutType::TILELEFT,  tileleft_impl );
+  layoutList->init();
 
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
-  layouts.front().arrange();
+  layoutList->focused().arrange();
   start_hook(hInstance);
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
