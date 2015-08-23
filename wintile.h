@@ -54,7 +54,7 @@ R& prev_itr_cir(typename List::iterator& itr, List& list) {
   return *itr;
 }
 
-/* class declarations */
+/* class implementations */
 enum struct WindowState {
   NORMAL,
   ICON,
@@ -64,12 +64,12 @@ enum struct WindowState {
 
 class Window final {
   public:
-    Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state){}
-    HWND getHandle() const;
-    WindowState getState() const;
-    RECT getRect() const;
-    void setState(const WindowState&);
-    void updateRect();
+    Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state) {}
+    HWND getHandle() const                  { return _handle;                 }
+    WindowState getState() const            { return _state;                  }
+    RECT getRect() const                    { return _rect;                   }
+    void setState(const WindowState& state) { _state = state;                 }
+    void updateRect()                       { GetWindowRect(_handle, &_rect); }
 
   private:
     HWND _handle;
@@ -79,20 +79,36 @@ class Window final {
 
 class WindowList final {
   public:
-    void init();
-    HWND focused();
-    HWND next();
-    HWND prev();
-    Window& focusedW();
-    Window& frontW();
-    Window& nextW();
-    Window& prevW();
-    void emplace_front(const HWND&, const WindowState&);
-    void emplace_back(const HWND&, const WindowState&);
-    void insert(const Window&);
-    void erase();
-    void swap(Window&, Window&);
-    size_t length() const;
+    void init()           { _itr = _list.begin();                     }
+    size_t length() const { return _length;                           }
+    HWND focused()        { return focusedW().getHandle();            }
+    HWND next()           { return nextW().getHandle();               }
+    HWND prev()           { return prevW().getHandle();               }
+    Window& focusedW()    { return *_itr;                             }
+    Window& frontW()      { return *(_itr = _list.begin());           }
+    Window& nextW()       { return next_itr_cir<Window>(_itr, _list); }
+    Window& prevW()       { return prev_itr_cir<Window>(_itr, _list); }
+    void emplace_front(const HWND& hWnd, const WindowState& state) {
+      _list.emplace_front(hWnd, state);
+      ++_length;
+    }
+    void emplace_back(const HWND& hWnd, const WindowState& state) {
+      _list.emplace_back(hWnd, state);
+      ++_length;
+    }
+    void insert(const Window& window) {
+      _itr = _list.insert(_itr, window);
+      ++_length;
+    }
+    void erase() {
+      _itr = _list.erase(_itr);
+      --_length;
+    }
+    void swap(Window& a, Window& b) {
+      auto tmp = a;
+      a = b;
+      b = tmp;
+    }
 
   private:
     size_t _length = 0;
@@ -107,9 +123,9 @@ enum struct LayoutType {
 
 class Layout final {
   public:
-    Layout(const LayoutType& name, const stdfunc& func) : _name(name), _func(func){}
-    LayoutType getName();
-    void arrange();
+    Layout(const LayoutType& name, const stdfunc& func) : _name(name), _func(func) {}
+    LayoutType getName() { return _name; }
+    void arrange()       { _func();      }
 
   private:
     LayoutType _name;
@@ -118,11 +134,13 @@ class Layout final {
 
 class LayoutList final {
   public:
-    void init();
-    Layout& focused();
-    Layout& next();
-    Layout& prev();
-    void emplace_back(const LayoutType&, void (*)());
+    void init()       { _itr = _list.begin();                     }
+    Layout& focused() { return *_itr;                             }
+    Layout& next()    { return next_itr_cir<Layout>(_itr, _list); }
+    Layout& prev()    { return prev_itr_cir<Layout>(_itr, _list); }
+    void emplace_back(const LayoutType& type, void (*func)()) {
+      _list.emplace_back(type, func);
+    }
 
   private:
     std::vector<Layout> _list;
