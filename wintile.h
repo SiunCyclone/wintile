@@ -1,6 +1,7 @@
 #ifndef WINTILE_H
 #define WINTILE_H
 
+#include <array>
 #include <functional>
 #include <list>
 #include <map>
@@ -9,10 +10,10 @@
 #include <vector>
 #include <windows.h>
 
-const unsigned int MODKEY    = VK_NONCONVERT;
-const unsigned int SUBMODKEY = VK_LSHIFT;
-const unsigned int WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
-const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
+constexpr auto MODKEY    = VK_NONCONVERT;
+constexpr auto SUBMODKEY = VK_LSHIFT;
+auto WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
+auto WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 
 using stdfunc = std::function<void()>;
 
@@ -103,11 +104,6 @@ class WindowList final {
     void erase() {
       _itr = _list.erase(_itr);
       --_length;
-    }
-    void swap(Window& a, Window& b) {
-      auto tmp = a;
-      a = b;
-      b = tmp;
     }
 
   private:

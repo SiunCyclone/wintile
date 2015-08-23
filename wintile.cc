@@ -2,11 +2,7 @@
 
 #include <functional>
 #include <iostream>
-#include <list>
-#include <map>
-#include <memory>
 #include <string>
-#include <vector>
 #include <windows.h>
 
 #include "wintile.h"
@@ -46,7 +42,9 @@ stdfunc swap_window(const int dist) {
     moveWindow(a, bRect.left, bRect.top, bRect.right-bRect.left, bRect.bottom-bRect.top, TRUE);
     moveWindow(b, aRect.left, aRect.top, aRect.right-aRect.left, aRect.bottom-aRect.top, TRUE);
 
-    showWndList->swap(a, b);
+    auto tmp = a;
+    a = b;
+    b = tmp;
   };
 }
 
@@ -86,21 +84,21 @@ void quit() {
 }
 
 void tileleft_impl() {
-  size_t length = showWndList->length();
+  auto length = showWndList->length();
   static auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
   showWndList->init();
   moveWindow(showWndList->focusedW(), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
-  for (size_t i=1; i<length; ++i)
+  for (auto i=1; i<length; ++i)
     moveWindow(showWndList->nextW(), width, (i-1)*height, width, height, TRUE);
 
   move_focus(1)();
 }
 
 void spiral_impl() {
-  size_t length = showWndList->length();
+  auto length = showWndList->length();
   static auto mainWidth = WINDOW_WIDTH / 2;
 
   showWndList->init();
@@ -111,7 +109,7 @@ void spiral_impl() {
   auto x = width;
   auto y = 0;
 
-  for (size_t i=1; i<length; ++i) {
+  for (auto i=1; i<length; ++i) {
     if (i != length - 1)
       (i % 2 == 0) ? width /= 2 : height /= 2;
 
@@ -267,7 +265,7 @@ void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
 
   showWndList->init();
-  for (size_t i=0; i<showWndList->length(); ++i) {
+  for (auto i=0; i<showWndList->length(); ++i) {
     auto handle = (i == 0) ? showWndList->focused() : showWndList->next();
     auto fromId = GetWindowThreadProcessId(handle, nullptr);
     auto toId = GetCurrentThreadId();
