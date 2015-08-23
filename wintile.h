@@ -31,11 +31,11 @@ void quit();
 void tileleft_impl();
 void spiral_impl();
 
-bool start_hook(HINSTANCE, HWND);
+bool start_hook(const HINSTANCE);
 bool stop_hook();
 void show_taskbar();
 void hide_taskbar();
-void create_window(HINSTANCE);
+void create_window(const HINSTANCE);
 void get_all_window();
 
 /* template implementations */

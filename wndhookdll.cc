@@ -27,7 +27,7 @@ LRESULT CALLBACK CallWndProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
     return CallNextHookEx(hookWnd, code, wParam, lParam);
   else if (code == HC_ACTION) {
-    CWPSTRUCT* tmp = (CWPSTRUCT*)lParam;
+    CWPSTRUCT* tmp = reinterpret_cast<CWPSTRUCT*>(lParam);
     UINT message = tmp->message;
 
     if (message == WM_CLOSE) {

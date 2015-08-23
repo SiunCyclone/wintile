@@ -128,10 +128,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       break;
     case WM_APP: {
       if (lParam == HSHELL_WINDOWCREATED) {
-        print(wParam);
-        showWndList->emplace_front((HWND)wParam, WindowState::NORMAL);
+        HWND hWnd = reinterpret_cast<HWND>(wParam);
 
-        auto fromId = GetWindowThreadProcessId((HWND)wParam, nullptr);
+        print(wParam);
+        showWndList->emplace_front(hWnd, WindowState::NORMAL);
+
+        auto fromId = GetWindowThreadProcessId(hWnd, nullptr);
         auto toId = GetCurrentThreadId();
         AttachThreadInput(fromId, toId, TRUE);
       } else if (lParam == WM_CLOSE)
@@ -151,7 +153,7 @@ LRESULT CALLBACK LLKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
     return CallNextHookEx(hookKey, code, wParam, lParam);
   else if (code == HC_ACTION) {
-    KBDLLHOOKSTRUCT* tmp = (KBDLLHOOKSTRUCT*)lParam;
+    KBDLLHOOKSTRUCT* tmp = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
     DWORD vkCode = tmp->vkCode;
     bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
 
@@ -199,7 +201,7 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
   return TRUE;
 }
 
-bool start_hook(HINSTANCE hInst) {
+bool start_hook(const HINSTANCE hInst) {
   hookKey = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
 
   if (hookKey == nullptr) {
@@ -233,7 +235,7 @@ void hide_taskbar() {
   ShowWindow(hStart, SW_HIDE);
 }
 
-void create_window(HINSTANCE hInstance) {
+void create_window(const HINSTANCE hInstance) {
   WNDCLASSEX wcex;
   auto className = TEXT("WintileClass");
 
