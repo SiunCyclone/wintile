@@ -1,14 +1,12 @@
 #ifndef WINTILE_H
 #define WINTILE_H
 
-#include <iostream>
-
-#include <string>
-#include <map>
-#include <list>
-#include <vector>
 #include <functional>
+#include <list>
+#include <map>
 #include <memory>
+#include <string>
+#include <vector>
 #include <windows.h>
 
 const unsigned int MODKEY    = VK_NONCONVERT;
@@ -19,9 +17,6 @@ const unsigned int WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 using stdfunc = std::function<void()>;
 
 /* function declarations */
-template<typename R, typename List> R& next_itr_cir(typename List::iterator&, List&);
-template<typename R, typename List> R& prev_itr_cir(typename List::iterator&, List&);
-
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc swap_window(const int);
@@ -41,6 +36,23 @@ void show_taskbar();
 void hide_taskbar();
 void create_window(HINSTANCE);
 void get_all_window();
+
+/* template implementations */
+template<typename R, typename List>
+R& next_itr_cir(typename List::iterator& itr, List& list) {
+  ++itr;
+  if (itr == list.end())
+    itr = list.begin();
+  return *itr;
+}
+
+template<typename R, typename List>
+R& prev_itr_cir(typename List::iterator& itr, List& list) {
+  if (itr == list.begin())
+    itr = list.end();
+  --itr;
+  return *itr;
+}
 
 /* class declarations */
 enum struct WindowState {
@@ -122,7 +134,6 @@ HHOOK hookKey = 0;
 HWND clientWnd;
 
 std::unique_ptr<LayoutList> layoutList(new LayoutList);
-
 std::unique_ptr<WindowList> showWndList(new WindowList);
 std::unique_ptr<WindowList> hideWndList(new WindowList);
 

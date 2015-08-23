@@ -1,12 +1,12 @@
 #define UNICODE
 
-#include <iostream>
-#include <string>
-#include <map>
-#include <list>
-#include <vector>
 #include <functional>
+#include <iostream>
+#include <list>
+#include <map>
 #include <memory>
+#include <string>
+#include <vector>
 #include <windows.h>
 
 #include "wintile.h"
@@ -130,22 +130,6 @@ void LayoutList::emplace_back(const LayoutType& type, void (*func)()) {
 }
 
 /* function implementations */
-template<typename R, typename List>
-R& next_itr_cir(typename List::iterator& itr, List& list) {
-  ++itr;
-  if (itr == list.end())
-    itr = list.begin();
-  return *itr;
-}
-
-template<typename R, typename List>
-R& prev_itr_cir(typename List::iterator& itr, List& list) {
-  if (itr == list.begin())
-    itr = list.end();
-  --itr;
-  return *itr;
-}
-
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
     !isPressed[SUBMODKEY] ? func() : sub_func();
