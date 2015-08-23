@@ -7,6 +7,8 @@
 
 HWINEVENTHOOK hookEvent;
 HHOOK hookWnd __attribute__ ((section(".hook"))) = 0;
+HHOOK hookShell __attribute__ ((section(".hook"))) = 0;
+
 HWND clientWnd __attribute__ ((section(".client"))) = 0;
 
 HINSTANCE hInst;
@@ -21,24 +23,47 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdReason, LPVOID lpRese
   return TRUE;
 }
 
-LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK CallWndProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
     return CallNextHookEx(hookWnd, code, wParam, lParam);
-  else if (code == HSHELL_WINDOWCREATED) {
-    auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
-    if (hwndTarget != NULL)
-      PostMessage(hwndTarget, WM_APP, wParam, lParam);
+  else if (code == HC_ACTION) {
+    CWPSTRUCT* tmp = (CWPSTRUCT*)lParam;
+    UINT message = tmp->message;
+
+    if (message == WM_CLOSE) {
+      auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+      if (hwndTarget != NULL)
+        PostMessage(hwndTarget, WM_APP, wParam, message);
+    }
   }
 
   return CallNextHookEx(hookWnd, code, wParam, lParam);
 }
 
+LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
+  if (code < 0)
+    return CallNextHookEx(hookShell, code, wParam, lParam);
+  else if (code == HSHELL_WINDOWCREATED) {
+    auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+    if (hwndTarget != NULL)
+      PostMessage(hwndTarget, WM_APP, wParam, code);
+  }
+
+  return CallNextHookEx(hookShell, code, wParam, lParam);
+}
+
 DLLAPI bool start_wnd_hook(HWND hWnd) {
-  hookWnd = SetWindowsHookEx(WH_SHELL, ShellProc, hInst, 0);
+  hookWnd = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProc, hInst, 0);
+  hookShell = SetWindowsHookEx(WH_SHELL, ShellProc, hInst, 0);
   clientWnd = hWnd;
 
   if (hookWnd == nullptr) {
     std::cout << "hookWnd is nullptr" << std::endl;
+    return false;
+  }
+
+  if (hookShell == nullptr) {
+    std::cout << "hookShell is nullptr" << std::endl;
     return false;
   }
 
@@ -48,6 +73,11 @@ DLLAPI bool start_wnd_hook(HWND hWnd) {
 DLLAPI bool stop_wnd_hook() {
   if (UnhookWindowsHookEx(hookWnd) == 0) {
     std::cout << "Unhook hookWnd is failed" << std::endl;
+    return false;
+  }
+
+  if (UnhookWindowsHookEx(hookShell) == 0) {
+    std::cout << "Unhook hookShell is failed" << std::endl;
     return false;
   }
 

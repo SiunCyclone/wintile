@@ -134,7 +134,7 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    auto handle = (dist == 1) ?  showWndList->next() :
+    auto handle = (dist == 1)  ? showWndList->next() :
                   (dist == -1) ? showWndList->prev() :
                                  showWndList->focused();
     SetForegroundWindow(handle);
@@ -178,9 +178,7 @@ void maximize() {
 }
 
 void destroy_window() {
-  PostMessage(showWndList->focused(), WM_CLOSE, 0, 0);
-  showWndList->erase();
-  (*layoutsItr).arrange();
+  SendMessage(showWndList->focused(), WM_CLOSE, 0, 0);
 }
 
 void call_next_layout() {
@@ -239,12 +237,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       callFunc[wParam]();
       break;
     case WM_APP: {
-      print(wParam);
-      showWndList->emplace_front((HWND)wParam, WindowState::NORMAL);
+      if (lParam == HSHELL_WINDOWCREATED) {
+        print(wParam);
+        showWndList->emplace_front((HWND)wParam, WindowState::NORMAL);
 
-      auto fromId = GetWindowThreadProcessId((HWND)wParam, nullptr);
-      auto toId = GetCurrentThreadId();
-      AttachThreadInput(fromId, toId, TRUE);
+        auto fromId = GetWindowThreadProcessId((HWND)wParam, nullptr);
+        auto toId = GetCurrentThreadId();
+        AttachThreadInput(fromId, toId, TRUE);
+      } else if (lParam == WM_CLOSE)
+        showWndList->erase();
 
       (*layoutsItr).arrange();
       break;
