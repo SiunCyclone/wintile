@@ -39,16 +39,16 @@ void create_window(const HINSTANCE);
 void get_all_window();
 
 /* template implementations */
-template<typename R, typename List>
-R& next_itr_cir(typename List::iterator& itr, List& list) {
+template<typename R, typename Itr, typename List>
+R& next_itr_cir(Itr& itr, List& list) {
   ++itr;
   if (itr == list.end())
     itr = list.begin();
   return *itr;
 }
 
-template<typename R, typename List>
-R& prev_itr_cir(typename List::iterator& itr, List& list) {
+template<typename R, typename Itr, typename List>
+R& prev_itr_cir(Itr& itr, List& list) {
   if (itr == list.begin())
     itr = list.end();
   --itr;
@@ -120,8 +120,8 @@ enum struct LayoutType {
 class Layout final {
   public:
     Layout(const LayoutType& name, const stdfunc& func) : _name(name), _func(func) {}
-    LayoutType getName() { return _name; }
-    void arrange()       { _func();      }
+    LayoutType getName() const { return _name; }
+    void arrange() const       { _func();      }
 
   private:
     LayoutType _name;
@@ -130,18 +130,21 @@ class Layout final {
 
 class LayoutList final {
   public:
-    void init()       { _itr = _list.begin();                     }
-    Layout& focused() { return *_itr;                             }
-    Layout& next()    { return next_itr_cir<Layout>(_itr, _list); }
-    Layout& prev()    { return prev_itr_cir<Layout>(_itr, _list); }
-    void emplace_back(const LayoutType& type, void (*func)()) {
-      _list.emplace_back(type, func);
-    }
+    LayoutList()                  { init();                                         }
+    void init()                   { _itr = _list.begin();                           }
+    const Layout& focused() const { return *_itr;                                   }
+    const Layout& next()          { return next_itr_cir<const Layout>(_itr, _list); }
+    const Layout& prev()          { return prev_itr_cir<const Layout>(_itr, _list); }
 
   private:
-    std::vector<Layout> _list;
-    std::vector<Layout>::iterator _itr;
+    static const std::array<Layout, 2> _list;
+    std::array<Layout, 2>::const_iterator _itr;
 };
+
+const std::array<Layout, 2> LayoutList::_list = {{
+  Layout( LayoutType::SPIRAL,    spiral_impl   ),
+  Layout( LayoutType::TILELEFT,  tileleft_impl )
+}};
 
 /* variables */
 HHOOK hookKey = 0;

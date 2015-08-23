@@ -278,10 +278,6 @@ void get_all_window() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   MSG msg;
 
-  layoutList->emplace_back( LayoutType::SPIRAL,    spiral_impl   );
-  layoutList->emplace_back( LayoutType::TILELEFT,  tileleft_impl );
-  layoutList->init();
-
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
