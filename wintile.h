@@ -7,7 +7,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
 #include <windows.h>
 
 constexpr auto MODKEY    = VK_NONCONVERT;
@@ -65,10 +64,11 @@ enum struct WindowState {
 
 class Window final {
   public:
-    Window(const HWND& handle, const WindowState& state) : _handle(handle), _state(state) {}
-    HWND getHandle() const                  { return _handle;                 }
-    WindowState getState() const            { return _state;                  }
-    RECT getRect() const                    { return _rect;                   }
+    Window(const HWND& handle, const WindowState& state) : _handle(handle),
+                                                           _state(state) {}
+    HWND getHandle()                  const { return _handle;                 }
+    WindowState getState()            const { return _state;                  }
+    RECT getRect()                    const { return _rect;                   }
     void setState(const WindowState& state) { _state = state;                 }
     void updateRect()                       { GetWindowRect(_handle, &_rect); }
 
@@ -119,9 +119,10 @@ enum struct LayoutType {
 
 class Layout final {
   public:
-    Layout(const LayoutType& name, const stdfunc& func) : _name(name), _func(func) {}
+    Layout(const LayoutType& name, const stdfunc& func) : _name(name),
+                                                          _func(func) {}
     LayoutType getName() const { return _name; }
-    void arrange() const       { _func();      }
+    void arrange()       const { _func();      }
 
   private:
     LayoutType _name;
@@ -146,13 +147,54 @@ const std::array<Layout, 2> LayoutList::_list = {{
   Layout( LayoutType::TILELEFT,  tileleft_impl )
 }};
 
+class Desktop final {
+  public:
+    Desktop() {}
+    Desktop(const char id) : _id(id),
+                             _layoutList(new LayoutList),
+                             _showWndList(new WindowList),
+                             _hideWndList(new WindowList) {}
+    std::unique_ptr<LayoutList>& getLayout()  { return _layoutList;  }
+    std::unique_ptr<WindowList>& getShowWnd() { return _showWndList; }
+    std::unique_ptr<WindowList>& getHideWnd() { return _hideWndList; }
+    void save() {
+
+    }
+    void restore() {
+
+    }
+
+  private:
+    char _id;
+    std::unique_ptr<LayoutList> _layoutList;
+    std::unique_ptr<WindowList> _showWndList;
+    std::unique_ptr<WindowList> _hideWndList;
+};
+
+class DesktopList final {
+  public:
+    DesktopList() {
+      for (auto i=0; i<_length; ++i)
+        _list[i] = Desktop(i);
+
+      _itr = _list.begin();
+    }
+    Desktop& focused() const { return *_itr; }
+    void move_focus(int index) {
+
+    }
+
+  private:
+    static const size_t _length = 9;
+    std::array<Desktop, _length> _list;
+    std::array<Desktop, _length>::iterator _itr;
+};
+
 /* variables */
 HHOOK hookKey = 0;
 HWND clientWnd;
 
-std::unique_ptr<LayoutList> layoutList(new LayoutList);
-std::unique_ptr<WindowList> showWndList(new WindowList);
-std::unique_ptr<WindowList> hideWndList(new WindowList);
+std::unique_ptr<DesktopList> deskList(new DesktopList);
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
