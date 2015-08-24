@@ -154,9 +154,9 @@ class Desktop final {
                              _layoutList(new LayoutList),
                              _showWndList(new WindowList),
                              _hideWndList(new WindowList) {}
-    std::unique_ptr<LayoutList>& getLayout()  { return _layoutList;  }
-    std::unique_ptr<WindowList>& getShowWnd() { return _showWndList; }
-    std::unique_ptr<WindowList>& getHideWnd() { return _hideWndList; }
+    std::unique_ptr<LayoutList>& getLayoutList()  { return _layoutList;  }
+    std::unique_ptr<WindowList>& getShowWndList() { return _showWndList; }
+    std::unique_ptr<WindowList>& getHideWndList() { return _hideWndList; }
     void save() {
 
     }
@@ -195,6 +195,10 @@ HHOOK hookKey = 0;
 HWND clientWnd;
 
 std::unique_ptr<DesktopList> deskList(new DesktopList);
+auto& desktop = deskList->focused();
+auto& layoutList = desktop.getLayoutList();
+auto& showWndList = desktop.getShowWndList();
+auto& hideWndList = desktop.getHideWndList();
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },

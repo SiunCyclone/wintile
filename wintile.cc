@@ -22,9 +22,9 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    auto handle = (dist == 1)  ? deskList->focused().getShowWnd()->next() :
-                  (dist == -1) ? deskList->focused().getShowWnd()->prev() :
-                                 deskList->focused().getShowWnd()->focused();
+    auto handle = (dist == 1)  ? showWndList->next() :
+                  (dist == -1) ? showWndList->prev() :
+                                 showWndList->focused();
     SetForegroundWindow(handle);
     SetFocus(handle);
   };
@@ -32,10 +32,10 @@ stdfunc move_focus(const int dist) {
 
 stdfunc swap_window(const int dist) {
   return [=] {
-    auto& a = deskList->focused().getShowWnd()->focusedW();
-    auto& b = (dist == 1)  ? deskList->focused().getShowWnd()->nextW() :
-              (dist == -1) ? deskList->focused().getShowWnd()->prevW() :
-                             deskList->focused().getShowWnd()->frontW();
+    auto& a = showWndList->focusedW();
+    auto& b = (dist == 1)  ? showWndList->nextW() :
+              (dist == -1) ? showWndList->prevW() :
+                             showWndList->frontW();
     auto aRect = a.getRect();
     auto bRect = b.getRect();
 
@@ -57,26 +57,26 @@ stdfunc open_app(const wchar_t* path) {
 void maximize() {
   static WindowState prevState;
 
-  if (deskList->focused().getShowWnd()->focusedW().getState() == WindowState::MAXIMUM) {
-    ShowWindow(deskList->focused().getShowWnd()->focused(), SW_RESTORE);
-    deskList->focused().getShowWnd()->focusedW().setState(prevState);
+  if (showWndList->focusedW().getState() == WindowState::MAXIMUM) {
+    ShowWindow(showWndList->focused(), SW_RESTORE);
+    showWndList->focusedW().setState(prevState);
   } else {
-    prevState = deskList->focused().getShowWnd()->focusedW().getState();
-    ShowWindow(deskList->focused().getShowWnd()->focused(), SW_MAXIMIZE);
-    deskList->focused().getShowWnd()->focusedW().setState(WindowState::MAXIMUM);
+    prevState = showWndList->focusedW().getState();
+    ShowWindow(showWndList->focused(), SW_MAXIMIZE);
+    showWndList->focusedW().setState(WindowState::MAXIMUM);
   }
 }
 
 void destroy_window() {
-  SendMessage(deskList->focused().getShowWnd()->focused(), WM_CLOSE, 0, 0);
+  SendMessage(showWndList->focused(), WM_CLOSE, 0, 0);
 }
 
 void call_next_layout() {
-  deskList->focused().getLayout()->next().arrange();
+  layoutList->next().arrange();
 }
 
 void call_prev_layout() {
-  deskList->focused().getLayout()->prev().arrange();
+  layoutList->prev().arrange();
 }
 
 void quit() {
@@ -84,25 +84,25 @@ void quit() {
 }
 
 void tileleft_impl() {
-  auto length = deskList->focused().getShowWnd()->length();
+  auto length = showWndList->length();
   static auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
 
-  deskList->focused().getShowWnd()->init();
-  moveWindow(deskList->focused().getShowWnd()->focusedW(), 0, 0, width, WINDOW_HEIGHT, TRUE);
+  showWndList->init();
+  moveWindow(showWndList->focusedW(), 0, 0, width, WINDOW_HEIGHT, TRUE);
 
   for (auto i=1; i<length; ++i)
-    moveWindow(deskList->focused().getShowWnd()->nextW(), width, (i-1)*height, width, height, TRUE);
+    moveWindow(showWndList->nextW(), width, (i-1)*height, width, height, TRUE);
 
   move_focus(1)();
 }
 
 void spiral_impl() {
-  auto length = deskList->focused().getShowWnd()->length();
+  auto length = showWndList->length();
   static auto mainWidth = WINDOW_WIDTH / 2;
 
-  deskList->focused().getShowWnd()->init();
-  moveWindow(deskList->focused().getShowWnd()->focusedW(), 0, 0, mainWidth, WINDOW_HEIGHT, TRUE);
+  showWndList->init();
+  moveWindow(showWndList->focusedW(), 0, 0, mainWidth, WINDOW_HEIGHT, TRUE);
 
   auto width = WINDOW_WIDTH / 2;
   auto height = WINDOW_HEIGHT;
@@ -113,7 +113,7 @@ void spiral_impl() {
     if (i != length - 1)
       (i % 2 == 0) ? width /= 2 : height /= 2;
 
-    moveWindow(deskList->focused().getShowWnd()->nextW(), x, y, width, height, TRUE);
+    moveWindow(showWndList->nextW(), x, y, width, height, TRUE);
 
     (i % 2 == 0) ? x += width : y += height;
   }
@@ -131,15 +131,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         HWND hWnd = reinterpret_cast<HWND>(wParam);
 
         print(wParam);
-        deskList->focused().getShowWnd()->emplace_front(hWnd, WindowState::NORMAL);
+        showWndList->emplace_front(hWnd, WindowState::NORMAL);
 
         auto fromId = GetWindowThreadProcessId(hWnd, nullptr);
         auto toId = GetCurrentThreadId();
         AttachThreadInput(fromId, toId, TRUE);
       } else if (lParam == WM_CLOSE)
-        deskList->focused().getShowWnd()->erase();
+        showWndList->erase();
 
-      deskList->focused().getLayout()->focused().arrange();
+      layoutList->focused().arrange();
       break;
     }
     default:
@@ -193,9 +193,9 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     print("");
 
     if (IsIconic(hWnd))
-      deskList->focused().getHideWnd()->emplace_back(hWnd, WindowState::ICON);
+      hideWndList->emplace_back(hWnd, WindowState::ICON);
     else
-      deskList->focused().getShowWnd()->emplace_back(hWnd, WindowState::NORMAL);
+      showWndList->emplace_back(hWnd, WindowState::NORMAL);
   }
 
   return TRUE;
@@ -266,9 +266,9 @@ void create_window(const HINSTANCE hInstance) {
 void get_all_window() {
   EnumWindows(EnumWndProc, (LPARAM)nullptr);
 
-  deskList->focused().getShowWnd()->init();
-  for (auto i=0; i<deskList->focused().getShowWnd()->length(); ++i) {
-    auto handle = (i == 0) ? deskList->focused().getShowWnd()->focused() : deskList->focused().getShowWnd()->next();
+  showWndList->init();
+  for (auto i=0; i<showWndList->length(); ++i) {
+    auto handle = (i == 0) ? showWndList->focused() : showWndList->next();
     auto fromId = GetWindowThreadProcessId(handle, nullptr);
     auto toId = GetCurrentThreadId();
     AttachThreadInput(fromId, toId, TRUE);
@@ -281,7 +281,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   create_window(hInstance);
   hide_taskbar();
   get_all_window();
-  deskList->focused().getLayout()->focused().arrange();
+  layoutList->focused().arrange();
   start_hook(hInstance);
 
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
