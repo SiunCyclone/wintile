@@ -159,43 +159,34 @@ class Desktop final {
     std::shared_ptr<LayoutList> getLayoutList()  { return _layoutList;  }
     std::shared_ptr<WindowList> getShowWndList() { return _showWndList; }
     std::shared_ptr<WindowList> getHideWndList() { return _hideWndList; }
-    void save() {
-      if (_showWndList->length() > 0) {
-        auto rect = _showWndList->focusedW().getRect();
-        for (auto i=0; i<_showWndList->length(); ++i) {
-          SetWindowPos(_showWndList->focused(),
-                       0,
-                       WINDOW_WIDTH + rect.left,
-                       WINDOW_HEIGHT + rect.top,
-                       0,
-                       0,
-                       SWP_NOSIZE);
-          rect = _showWndList->nextW().getRect();
-        }
-        move_focus(0)();
-      }
-    }
-    void restore() {
-      if (_showWndList->length() > 0) {
-        auto rect = _showWndList->focusedW().getRect();
-        for (auto i=0; i<_showWndList->length(); ++i) {
-          SetWindowPos(_showWndList->focused(),
-                       0,
-                       rect.left,
-                       rect.top,
-                       0,
-                       0,
-                       SWP_NOSIZE);
-          rect = _showWndList->nextW().getRect();
-        }
-        move_focus(0)();
-      }
-    }
-    int id() {
-      return _id;
-    }
+    void save()    { save_restore_impl("save"); }
+    void restore() { save_restore_impl("restore"); }
+    int id()       { return _id; }
 
   private:
+    void save_restore_impl(std::string type) {
+      if (_showWndList->length() > 0) {
+        auto rect = _showWndList->focusedW().getRect();
+        std::function<int()> left;
+        std::function<int()> top;
+
+        if (type == "save") {
+          left = [&] { return WINDOW_WIDTH + rect.left; };
+          top = [&] { return WINDOW_HEIGHT + rect.top; };
+        } else if (type == "restore") {
+          left = [&] { return rect.left; };
+          top = [&] { return rect.top; };
+        }
+
+        for (auto i=0; i<_showWndList->length(); ++i) {
+          SetWindowPos(_showWndList->focused(), 0, left(), top(), 0, 0, SWP_NOSIZE);
+          rect = _showWndList->nextW().getRect();
+        }
+
+        move_focus(0)();
+      }
+    }
+
     int _id;
     std::shared_ptr<LayoutList> _layoutList;
     std::shared_ptr<WindowList> _showWndList;
@@ -214,8 +205,10 @@ class DesktopList final {
         if ((_index - index) != 0) {
           std::cout << "index(Desktop _id)" << index << std::endl;
           focused()->save();
+
           _index = index;
           update_alias_list();
+
           focused()->restore();
         }
       };
