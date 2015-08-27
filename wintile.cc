@@ -2,11 +2,17 @@
 
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <windows.h>
 
 #include "wintile.h"
 #include "wndhookdll.h"
+
+auto desktop = deskList->focused();
+auto layoutList = desktop->getLayoutList();
+auto showWndList = desktop->getShowWndList();
+auto hideWndList = desktop->getHideWndList();
 
 template <typename T>
 void print(T str) {
@@ -14,6 +20,13 @@ void print(T str) {
 }
 
 /* function implementations */
+void update_alias_list() {
+  desktop = deskList->focused();
+  layoutList = desktop->getLayoutList();
+  showWndList = desktop->getShowWndList();
+  hideWndList = desktop->getHideWndList();
+}
+
 stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
   return [=] {
     !isPressed[SUBMODKEY] ? func() : sub_func();
@@ -22,29 +35,43 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    auto handle = (dist == 1)  ? showWndList->next() :
-                  (dist == -1) ? showWndList->prev() :
-                                 showWndList->focused();
-    SetForegroundWindow(handle);
-    SetFocus(handle);
+    if (showWndList->length() != 0) {
+      auto handle = (dist == 1)  ? showWndList->next() :
+                    (dist == -1) ? showWndList->prev() :
+                                   showWndList->focused();
+      SetForegroundWindow(handle);
+      SetFocus(handle);
+    }
   };
 };
 
 stdfunc swap_window(const int dist) {
   return [=] {
-    auto& a = showWndList->focusedW();
-    auto& b = (dist == 1)  ? showWndList->nextW() :
-              (dist == -1) ? showWndList->prevW() :
-                             showWndList->frontW();
-    auto aRect = a.getRect();
-    auto bRect = b.getRect();
+    if (showWndList->length() != 0) {
+      auto& a = showWndList->focusedW();
+      auto& b = (dist == 1)  ? showWndList->nextW() :
+                (dist == -1) ? showWndList->prevW() :
+                               showWndList->frontW();
+      auto aRect = a.getRect();
+      auto bRect = b.getRect();
 
-    moveWindow(a, bRect.left, bRect.top, bRect.right-bRect.left, bRect.bottom-bRect.top, TRUE);
-    moveWindow(b, aRect.left, aRect.top, aRect.right-aRect.left, aRect.bottom-aRect.top, TRUE);
+      moveWindow(a,
+                 bRect.left,
+                 bRect.top,
+                 bRect.right - bRect.left,
+                 bRect.bottom - bRect.top,
+                 TRUE);
+      moveWindow(b,
+                 aRect.left,
+                 aRect.top,
+                 aRect.right - aRect.left,
+                 aRect.bottom - aRect.top,
+                 TRUE);
 
-    auto tmp = a;
-    a = b;
-    b = tmp;
+      auto tmp = a;
+      a = b;
+      b = tmp;
+    }
   };
 }
 
@@ -55,28 +82,33 @@ stdfunc open_app(const wchar_t* path) {
 }
 
 void maximize() {
-  static WindowState prevState;
+  if (showWndList->length() != 0) {
+    static WindowState prevState;
 
-  if (showWndList->focusedW().getState() == WindowState::MAXIMUM) {
-    ShowWindow(showWndList->focused(), SW_RESTORE);
-    showWndList->focusedW().setState(prevState);
-  } else {
-    prevState = showWndList->focusedW().getState();
-    ShowWindow(showWndList->focused(), SW_MAXIMIZE);
-    showWndList->focusedW().setState(WindowState::MAXIMUM);
+    if (showWndList->focusedW().getState() == WindowState::MAXIMUM) {
+      ShowWindow(showWndList->focused(), SW_RESTORE);
+      showWndList->focusedW().setState(prevState);
+    } else {
+      prevState = showWndList->focusedW().getState();
+      ShowWindow(showWndList->focused(), SW_MAXIMIZE);
+      showWndList->focusedW().setState(WindowState::MAXIMUM);
+    }
   }
 }
 
 void destroy_window() {
-  SendMessage(showWndList->focused(), WM_CLOSE, 0, 0);
+  if (showWndList->length() != 0)
+    SendMessage(showWndList->focused(), WM_CLOSE, 0, 0);
 }
 
 void call_next_layout() {
-  layoutList->next().arrange();
+  if (showWndList->length() != 0)
+    layoutList->next().arrange();
 }
 
 void call_prev_layout() {
-  layoutList->prev().arrange();
+  if (showWndList->length() != 0)
+    layoutList->prev().arrange();
 }
 
 void quit() {
@@ -123,9 +155,10 @@ void spiral_impl() {
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
-    case WM_KEYDOWN:
+    case WM_KEYDOWN: {
       callFunc[wParam]();
       break;
+    }
     case WM_APP: {
       if (lParam == HSHELL_WINDOWCREATED) {
         HWND hWnd = reinterpret_cast<HWND>(wParam);

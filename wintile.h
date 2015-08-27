@@ -17,6 +17,7 @@ auto WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 using stdfunc = std::function<void()>;
 
 /* function declarations */
+void update_alias_list();
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc swap_window(const int);
@@ -150,44 +151,76 @@ const std::array<Layout, 2> LayoutList::_list = {{
 class Desktop final {
   public:
     Desktop() {}
-    Desktop(const char id) : _id(id),
-                             _layoutList(new LayoutList),
-                             _showWndList(new WindowList),
-                             _hideWndList(new WindowList) {}
-    std::unique_ptr<LayoutList>& getLayoutList()  { return _layoutList;  }
-    std::unique_ptr<WindowList>& getShowWndList() { return _showWndList; }
-    std::unique_ptr<WindowList>& getHideWndList() { return _hideWndList; }
+    Desktop(const int id) : _id(id),
+                            _layoutList(new LayoutList),
+                            _showWndList(new WindowList),
+                            _hideWndList(new WindowList) {}
+    std::shared_ptr<LayoutList> getLayoutList()  { return _layoutList;  }
+    std::shared_ptr<WindowList> getShowWndList() { return _showWndList; }
+    std::shared_ptr<WindowList> getHideWndList() { return _hideWndList; }
     void save() {
-
+      if (_showWndList->length() != 0) {
+        auto rect = _showWndList->focusedW().getRect();
+        for (auto i=0; i<_showWndList->length(); ++i) {
+          SetWindowPos(_showWndList->focused(),
+                       0,
+                       WINDOW_WIDTH + rect.left,
+                       WINDOW_HEIGHT + rect.top,
+                       0,
+                       0,
+                       SWP_NOSIZE);
+          rect = _showWndList->nextW().getRect();
+        }
+        move_focus(0)();
+      }
     }
     void restore() {
-
+      if (_showWndList->length() != 0) {
+        auto rect = _showWndList->focusedW().getRect();
+        for (auto i=0; i<_showWndList->length(); ++i) {
+          SetWindowPos(_showWndList->focused(),
+                       0,
+                       rect.left,
+                       rect.top,
+                       0,
+                       0,
+                       SWP_NOSIZE);
+          rect = _showWndList->nextW().getRect();
+        }
+        move_focus(0)();
+      }
     }
 
   private:
-    char _id;
-    std::unique_ptr<LayoutList> _layoutList;
-    std::unique_ptr<WindowList> _showWndList;
-    std::unique_ptr<WindowList> _hideWndList;
+    int _id;
+    std::shared_ptr<LayoutList> _layoutList;
+    std::shared_ptr<WindowList> _showWndList;
+    std::shared_ptr<WindowList> _hideWndList;
 };
 
 class DesktopList final {
   public:
     DesktopList() {
       for (auto i=0; i<_length; ++i)
-        _list[i] = Desktop(i);
-
-      _itr = _list.begin();
+        _list[i] = std::make_shared<Desktop>(i);
     }
-    Desktop& focused() const { return *_itr; }
-    void move_focus(int index) {
-
+    std::shared_ptr<Desktop> focused() { return _list[_index]; }
+    stdfunc swap_desktop(int index) {
+      return [=] {
+        if ((_index - index) != 0) {
+          std::cout << "index(Desktop _id)" << index << std::endl;
+          focused()->save();
+          _index = index;
+          update_alias_list();
+          focused()->restore();
+        }
+      };
     }
 
   private:
     static const size_t _length = 9;
-    std::array<Desktop, _length> _list;
-    std::array<Desktop, _length>::iterator _itr;
+    unsigned int _index = 0;
+    std::array<std::shared_ptr<Desktop>, _length> _list;
 };
 
 /* variables */
@@ -195,10 +228,6 @@ HHOOK hookKey = 0;
 HWND clientWnd;
 
 std::unique_ptr<DesktopList> deskList(new DesktopList);
-auto& desktop = deskList->focused();
-auto& layoutList = desktop.getLayoutList();
-auto& showWndList = desktop.getShowWndList();
-auto& hideWndList = desktop.getHideWndList();
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
@@ -208,15 +237,18 @@ std::map<unsigned int, bool> isPressed = {
 wchar_t terminalPath[256] = L"\"C:/msys32/msys2_shell.bat\"";
 wchar_t browserPath[256] = L"\"C:/Program Files/Mozilla Firefox/firefox.exe\"";
 std::map<unsigned int, stdfunc> callFunc = {
-  { 'J',        func_switcher( move_focus(1),         swap_window(1)         )},
-  { 'K',        func_switcher( move_focus(-1),        swap_window(-1)        )},
-  { 'D',        func_switcher( []{},                  destroy_window         )},
-  { VK_RETURN,  func_switcher( []{},                  open_app(terminalPath) )},
-  { VK_SPACE,   func_switcher( call_next_layout,      call_prev_layout       )},
-  { 'A',                       swap_window(0)                                 },
-  { 'I',                       open_app(browserPath)                          },
-  { 'M',                       maximize                                       },
-  { 'Q',                       quit                                           }
+  { 'J',        func_switcher( move_focus(1),              swap_window(1)         )},
+  { 'K',        func_switcher( move_focus(-1),             swap_window(-1)        )},
+  { 'D',        func_switcher( []{},                       destroy_window         )},
+  { VK_RETURN,  func_switcher( []{},                       open_app(terminalPath) )},
+  { VK_SPACE,   func_switcher( call_next_layout,           call_prev_layout       )},
+  { '1',        func_switcher( deskList->swap_desktop(0),  []{}                   )},
+  { '2',        func_switcher( deskList->swap_desktop(1),  []{}                   )},
+  { '3',        func_switcher( deskList->swap_desktop(2),  []{}                   )},
+  { 'A',                       swap_window(0)                                      },
+  { 'I',                       open_app(browserPath)                               },
+  { 'M',                       maximize                                            },
+  { 'Q',                       quit                                                }
 };
 
 auto convertUTF16toUTF8 = [] (const wchar_t* wbuf, const unsigned int maxSize) -> std::string {
