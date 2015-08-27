@@ -35,7 +35,7 @@ stdfunc func_switcher(const stdfunc& func, const stdfunc& sub_func) {
 
 stdfunc move_focus(const int dist) {
   return [=] {
-    if (showWndList->length() != 0) {
+    if (showWndList->length() > 0) {
       auto handle = (dist == 1)  ? showWndList->next() :
                     (dist == -1) ? showWndList->prev() :
                                    showWndList->focused();
@@ -47,7 +47,7 @@ stdfunc move_focus(const int dist) {
 
 stdfunc swap_window(const int dist) {
   return [=] {
-    if (showWndList->length() != 0) {
+    if (showWndList->length() > 0) {
       auto& a = showWndList->focusedW();
       auto& b = (dist == 1)  ? showWndList->nextW() :
                 (dist == -1) ? showWndList->prevW() :
@@ -75,6 +75,23 @@ stdfunc swap_window(const int dist) {
   };
 }
 
+stdfunc transfer_window(const int dist) {
+  return [=] {
+    if (desktop->id() != dist && showWndList->length() > 0) {
+      auto hWnd = showWndList->focused();
+
+      showWndList->erase();
+      showWndList->prev();
+      layoutList->focused().arrange();
+
+      deskList->swap_desktop(dist)();
+      showWndList->emplace_front(hWnd, WindowState::NORMAL);
+
+      layoutList->focused().arrange();
+    }
+  };
+}
+
 stdfunc open_app(const wchar_t* path) {
   return [=] {
     ShellExecute(nullptr, L"open", path, nullptr, nullptr, SW_HIDE);
@@ -82,7 +99,7 @@ stdfunc open_app(const wchar_t* path) {
 }
 
 void maximize() {
-  if (showWndList->length() != 0) {
+  if (showWndList->length() > 0) {
     static WindowState prevState;
 
     if (showWndList->focusedW().getState() == WindowState::MAXIMUM) {
@@ -97,17 +114,17 @@ void maximize() {
 }
 
 void destroy_window() {
-  if (showWndList->length() != 0)
+  if (showWndList->length() > 0)
     SendMessage(showWndList->focused(), WM_CLOSE, 0, 0);
 }
 
 void call_next_layout() {
-  if (showWndList->length() != 0)
+  if (showWndList->length() > 0)
     layoutList->next().arrange();
 }
 
 void call_prev_layout() {
-  if (showWndList->length() != 0)
+  if (showWndList->length() > 0)
     layoutList->prev().arrange();
 }
 

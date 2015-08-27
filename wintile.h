@@ -21,6 +21,7 @@ void update_alias_list();
 stdfunc func_switcher(const stdfunc&, const stdfunc&);
 stdfunc move_focus(const int);
 stdfunc swap_window(const int);
+stdfunc transfer_window(const int);
 stdfunc open_app(const wchar_t*);
 void maximize();
 void destroy_window();
@@ -159,7 +160,7 @@ class Desktop final {
     std::shared_ptr<WindowList> getShowWndList() { return _showWndList; }
     std::shared_ptr<WindowList> getHideWndList() { return _hideWndList; }
     void save() {
-      if (_showWndList->length() != 0) {
+      if (_showWndList->length() > 0) {
         auto rect = _showWndList->focusedW().getRect();
         for (auto i=0; i<_showWndList->length(); ++i) {
           SetWindowPos(_showWndList->focused(),
@@ -175,7 +176,7 @@ class Desktop final {
       }
     }
     void restore() {
-      if (_showWndList->length() != 0) {
+      if (_showWndList->length() > 0) {
         auto rect = _showWndList->focusedW().getRect();
         for (auto i=0; i<_showWndList->length(); ++i) {
           SetWindowPos(_showWndList->focused(),
@@ -189,6 +190,9 @@ class Desktop final {
         }
         move_focus(0)();
       }
+    }
+    int id() {
+      return _id;
     }
 
   private:
@@ -242,9 +246,15 @@ std::map<unsigned int, stdfunc> callFunc = {
   { 'D',        func_switcher( []{},                       destroy_window         )},
   { VK_RETURN,  func_switcher( []{},                       open_app(terminalPath) )},
   { VK_SPACE,   func_switcher( call_next_layout,           call_prev_layout       )},
-  { '1',        func_switcher( deskList->swap_desktop(0),  []{}                   )},
-  { '2',        func_switcher( deskList->swap_desktop(1),  []{}                   )},
-  { '3',        func_switcher( deskList->swap_desktop(2),  []{}                   )},
+  { '1',        func_switcher( deskList->swap_desktop(0),  transfer_window(0)     )},
+  { '2',        func_switcher( deskList->swap_desktop(1),  transfer_window(1)     )},
+  { '3',        func_switcher( deskList->swap_desktop(2),  transfer_window(2)     )},
+  { '4',        func_switcher( deskList->swap_desktop(3),  transfer_window(3)     )},
+  { '5',        func_switcher( deskList->swap_desktop(4),  transfer_window(4)     )},
+  { '6',        func_switcher( deskList->swap_desktop(5),  transfer_window(5)     )},
+  { '7',        func_switcher( deskList->swap_desktop(6),  transfer_window(6)     )},
+  { '8',        func_switcher( deskList->swap_desktop(7),  transfer_window(7)     )},
+  { '9',        func_switcher( deskList->swap_desktop(8),  transfer_window(8)     )},
   { 'A',                       swap_window(0)                                      },
   { 'I',                       open_app(browserPath)                               },
   { 'M',                       maximize                                            },
