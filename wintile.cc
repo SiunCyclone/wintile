@@ -143,6 +143,8 @@ void tileleft_impl() {
     moveWindow(showWndList->nextW(), width, (i-1)*height, width, height, TRUE);
 
   move_focus(1)();
+  move_focus(-1)();
+  move_focus(1)();
 }
 
 void spiral_impl() {
@@ -167,6 +169,8 @@ void spiral_impl() {
   }
 
   move_focus(1)();
+  move_focus(-1)();
+  move_focus(1)();
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -185,10 +189,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         auto fromId = GetWindowThreadProcessId(hWnd, nullptr);
         auto toId = GetCurrentThreadId();
         AttachThreadInput(fromId, toId, TRUE);
-      } else if (lParam == WM_CLOSE)
+
+        layoutList->focused().arrange();
+
+      } else if (lParam == WM_CLOSE) {
         showWndList->erase();
 
-      layoutList->focused().arrange();
+        auto itr = showWndList->get_itr();
+        layoutList->focused().arrange();
+        showWndList->set_itr(itr);
+
+        move_focus(0)();
+      }
       break;
     }
     default:

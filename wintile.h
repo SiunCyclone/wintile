@@ -107,6 +107,12 @@ class WindowList final {
       _itr = _list.erase(_itr);
       --_length;
     }
+    std::list<Window>::iterator get_itr() {
+      return _itr;
+    }
+    void set_itr(std::list<Window>::iterator itr) {
+      _itr = itr;
+    }
 
   private:
     size_t _length = 0;
