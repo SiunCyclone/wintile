@@ -92,14 +92,17 @@ class WindowList final {
     Window& nextW()       { return next_itr_cir<Window>(_itr, _list); }
     Window& prevW()       { return prev_itr_cir<Window>(_itr, _list); }
     void emplace_front(const HWND& hWnd, const WindowState& state) {
+      SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER | WS_THICKFRAME);
       _list.emplace_front(hWnd, state);
       ++_length;
     }
     void emplace_back(const HWND& hWnd, const WindowState& state) {
+      SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER | WS_THICKFRAME);
       _list.emplace_back(hWnd, state);
       ++_length;
     }
     void insert(const Window& window) {
+      SetWindowLongPtr(window.getHandle(), GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER | WS_THICKFRAME);
       _itr = _list.insert(_itr, window);
       ++_length;
     }
