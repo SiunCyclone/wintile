@@ -5,7 +5,6 @@
 
 #include "wndhookdll.h"
 
-HWINEVENTHOOK hookEvent;
 HHOOK hookWnd __attribute__ ((section(".hook"))) = 0;
 HHOOK hookShell __attribute__ ((section(".hook"))) = 0;
 
@@ -29,11 +28,19 @@ LRESULT CALLBACK CallWndProc(int code, WPARAM wParam, LPARAM lParam) {
   else if (code == HC_ACTION) {
     CWPSTRUCT* tmp = reinterpret_cast<CWPSTRUCT*>(lParam);
     UINT message = tmp->message;
+    WPARAM wP = tmp->wParam;
+    LPARAM lP = tmp->lParam;
 
     if (message == WM_CLOSE) {
       auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
       if (hwndTarget != NULL)
-        PostMessage(hwndTarget, WM_APP, wParam, message);
+        PostMessage(hwndTarget, WM_APP, wP, message);
+    }
+
+    if (message == WM_MOUSEACTIVATE) {
+      auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+      if (hwndTarget != NULL)
+        PostMessage(hwndTarget, WM_MOUSEACTIVATE, wP, lP);
     }
   }
 

@@ -179,14 +179,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       callFunc[wParam]();
       break;
     }
+    case WM_MOUSEACTIVATE: {
+      HWND handle= reinterpret_cast<HWND>(wParam);
+      if (showWndList->focused() != handle) {
+        showWndList->next();
+        for (auto i=1; i<showWndList->length(); ++i) {
+          if (showWndList->focused() == handle) {
+            move_focus(0)();
+            break;
+          }
+          showWndList->next();
+        }
+      }
+      return DefWindowProc(hWnd, msg, wParam, lParam);
+    }
     case WM_APP: {
       if (lParam == HSHELL_WINDOWCREATED) {
-        HWND hWnd = reinterpret_cast<HWND>(wParam);
+        HWND handle = reinterpret_cast<HWND>(wParam);
 
         print(wParam);
-        showWndList->emplace_front(hWnd, WindowState::NORMAL);
+        showWndList->emplace_front(handle, WindowState::NORMAL);
 
-        auto fromId = GetWindowThreadProcessId(hWnd, nullptr);
+        auto fromId = GetWindowThreadProcessId(handle, nullptr);
         auto toId = GetCurrentThreadId();
         AttachThreadInput(fromId, toId, TRUE);
 
