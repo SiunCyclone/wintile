@@ -311,8 +311,8 @@ LRESULT CALLBACK BarWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PAINTSTRUCT ps;
 
       hdc = BeginPaint(hWnd, &ps);
+      bar->paint(desktop); //TODO Use hdc to repaint
       EndPaint(hWnd, &ps);
-      bar->paint();
       break;
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
@@ -412,6 +412,7 @@ void init(const HINSTANCE hInstance) {
 
   create_window(hInstance);
   bar->create(hInstance);
+  bar->paint(desktop);
   hide_taskbar();
   get_all_window();
   layoutList->focused().arrange();

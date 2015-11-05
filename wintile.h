@@ -209,33 +209,6 @@ class Desktop final {
     std::shared_ptr<WindowList> _hideWndList;
 };
 
-class DesktopList final {
-  public:
-    DesktopList() {
-      for (auto i=0; i<_length; ++i)
-        _list[i] = std::make_shared<Desktop>(i);
-    }
-    std::shared_ptr<Desktop> focused() { return _list[_index]; }
-    stdfunc swap_desktop(int index) {
-      return [=] {
-        if ((_index - index) != 0) {
-          std::cout << "index(Desktop _id)" << index << std::endl;
-          focused()->save();
-
-          _index = index;
-          update_alias_list();
-
-          focused()->restore();
-        }
-      };
-    }
-
-  private:
-    static const size_t _length = 9;
-    unsigned int _index = 0;
-    std::array<std::shared_ptr<Desktop>, _length> _list;
-};
-
 class Bar final {
   public:
     void create(const HINSTANCE hInstance) {
@@ -270,36 +243,50 @@ class Bar final {
 
       if (_handle == nullptr)
         return;
-
-      paint();
     }
-    void paint() {
+    void paint(std::shared_ptr<Desktop> desktop) {
       HDC hdc = GetDC(_handle);
-      SetBkColor(hdc, RGB(0, 0, 0));
-      SetTextColor(hdc, RGB(170, 170, 170));
+
+      auto defBkColor = RGB(0, 0, 0);
+      auto defTextColor = RGB(190, 190, 190);
+      auto curBkColor = RGB(110, 120, 140);
+      auto curTextColor = RGB(230, 230, 230);
 
       std::wstring str;
-      str = L"1";
-      TextOut(hdc, 30, 0, str.c_str(), str.length());
+      auto w = 24;
 
-      str = L"2";
-      TextOut(hdc, 70, 0, str.c_str(), str.length());
-
-      str = L"3";
-      TextOut(hdc, 110, 0, str.c_str(), str.length());
-
-      ReleaseDC(_handle, hdc);
-      /*
-      auto hdc = GetDC(handle);
-      auto pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+      /* Paint 1~9 tag except current-desktop-tag */
+      auto pen        = CreatePen(PS_SOLID, 1, defBkColor);
+      auto brush      = CreateSolidBrush(defBkColor);
+      SetBkColor(hdc, defBkColor);
+      SetTextColor(hdc, defTextColor);
       SelectObject(hdc, pen);
-      auto brush = CreateSolidBrush(RGB(0, 0, 0));
-      SelectObject(hdc, GetStockObject(brush));
-      RECT rect = { 0, 0, _width, _height };
-      Rectangle(hdc, 0, 0, rect.right-rect.left, rect.bottom-rect.top);
+      SelectObject(hdc, brush);
+      for (int i=1; i<10; ++i) {
+        if (i == desktop->id()+1)
+          continue;
+
+        Rectangle(hdc, w*i, -1, w*(i+1), _height);
+        str = std::to_wstring(i);
+        TextOut(hdc, w*i+8, 1, str.c_str(), str.length());
+      }
+
+      /* Paint current-desktop-tag */
+      auto i = desktop->id()+1;
+      pen   = CreatePen(PS_SOLID, 1, curBkColor);
+      brush = CreateSolidBrush(curBkColor);
+      SetBkColor(hdc, curBkColor);
+      SetTextColor(hdc, curTextColor);
+      SelectObject(hdc, pen);
+      SelectObject(hdc, brush);
+
+      Rectangle(hdc, w*i, -1, w*(i+1), _height);
+      str = std::to_wstring(i);
+      TextOut(hdc, w*i+8, 1, str.c_str(), str.length());
+
       DeleteObject(pen);
-      ReleaseDC(handle, hdc);
-      */
+      DeleteObject(brush);
+      ReleaseDC(_handle, hdc);
     }
     int getWidth()  { return _width; }
     int getHeight() { return _height; }
@@ -309,13 +296,41 @@ class Bar final {
     int _width = WINDOW_WIDTH;
     int _height = 20;
 };
+std::unique_ptr<Bar> bar(new Bar);
+
+class DesktopList final {
+  public:
+    DesktopList() {
+      for (auto i=0; i<_length; ++i)
+        _list[i] = std::make_shared<Desktop>(i);
+    }
+    std::shared_ptr<Desktop> focused() { return _list[_index]; }
+    stdfunc swap_desktop(int index) {
+      return [=] {
+        if ((_index - index) != 0) {
+          std::cout << "index(Desktop _id)" << index << std::endl;
+          focused()->save();
+
+          _index = index;
+          bar->paint(focused());
+          update_alias_list();
+
+          focused()->restore();
+        }
+      };
+    }
+
+  private:
+    static const size_t _length = 9;
+    unsigned int _index = 0;
+    std::array<std::shared_ptr<Desktop>, _length> _list;
+};
 
 /* variables */
 HHOOK hookKey = 0;
 HWND clientWnd;
 
 std::unique_ptr<DesktopList> deskList(new DesktopList);
-std::unique_ptr<Bar> bar(new Bar);
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },
