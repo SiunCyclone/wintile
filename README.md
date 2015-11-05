@@ -30,3 +30,9 @@ S-key          : Shift + key
 .=================================================================.
 ```
 
+### Recommend
+* Add below line to your .minttyrc (ver>=2.2.1)
+```
+ZoomFontWithWindow=no
+```
+

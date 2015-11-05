@@ -9,12 +9,12 @@
 #include <string>
 #include <windows.h>
 
+using stdfunc = std::function<void()>;
+
 constexpr auto MODKEY    = VK_NONCONVERT;
 constexpr auto SUBMODKEY = VK_LSHIFT;
 auto WINDOW_WIDTH  = GetSystemMetrics(SM_CXSCREEN);
 auto WINDOW_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
-
-using stdfunc = std::function<void()>;
 
 /* function declarations */
 void update_alias_list();
@@ -32,12 +32,19 @@ void quit();
 void tileleft_impl();
 void spiral_impl();
 
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK LLKeyboardProc(int, WPARAM, LPARAM);
+BOOL CALLBACK EnumWndProc(HWND, LPARAM);
+LRESULT CALLBACK BarWndProc(HWND, UINT, WPARAM, LPARAM);
+
 bool start_hook(const HINSTANCE);
 bool stop_hook();
 void show_taskbar();
 void hide_taskbar();
 void create_window(const HINSTANCE);
 void get_all_window();
+void init(const HINSTANCE);
+void cleanup();
 
 /* template implementations */
 template<typename R, typename Itr, typename List>
@@ -92,17 +99,22 @@ class WindowList final {
     Window& nextW()       { return next_itr_cir<Window>(_itr, _list); }
     Window& prevW()       { return prev_itr_cir<Window>(_itr, _list); }
     void emplace_front(const HWND& hWnd, const WindowState& state) {
-      SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER | WS_THICKFRAME);
+      //SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER);
+      //SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+      SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_THICKFRAME);
       _list.emplace_front(hWnd, state);
       ++_length;
     }
     void emplace_back(const HWND& hWnd, const WindowState& state) {
-      SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER | WS_THICKFRAME);
+      //SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER);
+      //SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+      SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_THICKFRAME);
       _list.emplace_back(hWnd, state);
       ++_length;
     }
     void insert(const Window& window) {
-      SetWindowLongPtr(window.getHandle(), GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER | WS_THICKFRAME);
+      //SetWindowLongPtr(window.getHandle(), GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_BORDER);
+      SetWindowLongPtr(window.getHandle(), GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_THICKFRAME);
       _itr = _list.insert(_itr, window);
       ++_length;
     }
@@ -229,11 +241,86 @@ class DesktopList final {
     std::array<std::shared_ptr<Desktop>, _length> _list;
 };
 
+class Bar final {
+  public:
+    void create(const HINSTANCE hInstance) {
+      WNDCLASSEX wcex;
+      auto className = TEXT("WintileBarClass");
+
+      wcex.cbSize = sizeof(WNDCLASSEX);
+      wcex.style = 0;
+      wcex.lpfnWndProc = BarWndProc;
+      wcex.cbClsExtra = 0;
+      wcex.cbWndExtra = 0;
+      wcex.hInstance = hInstance;
+      wcex.hIcon = nullptr;
+      wcex.hCursor = nullptr;
+      wcex.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+      wcex.lpszMenuName = nullptr;
+      wcex.lpszClassName = className;
+      wcex.hIconSm = nullptr;
+
+      if (RegisterClassEx(&wcex) == 0)
+        return;
+
+      _handle = CreateWindowEx(WS_EX_TOOLWINDOW,
+                               className,
+                               TEXT("wintileBar"),
+                               WS_VISIBLE | WS_POPUP,
+                               0, 0, _width, _height,
+                               0,
+                               nullptr,
+                               hInstance,
+                               nullptr);
+
+      if (_handle == nullptr)
+        return;
+
+      paint();
+    }
+    void paint() {
+      HDC hdc = GetDC(_handle);
+      SetBkColor(hdc, RGB(0, 0, 0));
+      SetTextColor(hdc, RGB(170, 170, 170));
+
+      std::wstring str;
+      str = L"1";
+      TextOut(hdc, 30, 0, str.c_str(), str.length());
+
+      str = L"2";
+      TextOut(hdc, 70, 0, str.c_str(), str.length());
+
+      str = L"3";
+      TextOut(hdc, 110, 0, str.c_str(), str.length());
+
+      ReleaseDC(_handle, hdc);
+      /*
+      auto hdc = GetDC(handle);
+      auto pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+      SelectObject(hdc, pen);
+      auto brush = CreateSolidBrush(RGB(0, 0, 0));
+      SelectObject(hdc, GetStockObject(brush));
+      RECT rect = { 0, 0, _width, _height };
+      Rectangle(hdc, 0, 0, rect.right-rect.left, rect.bottom-rect.top);
+      DeleteObject(pen);
+      ReleaseDC(handle, hdc);
+      */
+    }
+    int getWidth()  { return _width; }
+    int getHeight() { return _height; }
+
+  private:
+    HWND _handle;
+    int _width = WINDOW_WIDTH;
+    int _height = 20;
+};
+
 /* variables */
 HHOOK hookKey = 0;
 HWND clientWnd;
 
 std::unique_ptr<DesktopList> deskList(new DesktopList);
+std::unique_ptr<Bar> bar(new Bar);
 
 std::map<unsigned int, bool> isPressed = {
   { MODKEY,     false },

@@ -134,13 +134,23 @@ void quit() {
 void tileleft_impl() {
   auto length = showWndList->length();
   static auto width = WINDOW_WIDTH / 2;
-  auto height = WINDOW_HEIGHT / (length>1 ? length-1 : 1);
+  auto height = (WINDOW_HEIGHT - bar->getHeight()) / (length>1 ? length-1 : 1);
 
   showWndList->init();
-  moveWindow(showWndList->focusedW(), 0, 0, width, WINDOW_HEIGHT, TRUE);
+  moveWindow(showWndList->focusedW(),
+             0,
+             bar->getHeight(),
+             width,
+             WINDOW_HEIGHT - bar->getHeight(),
+             TRUE);
 
   for (auto i=1; i<length; ++i)
-    moveWindow(showWndList->nextW(), width, (i-1)*height, width, height, TRUE);
+    moveWindow(showWndList->nextW(),
+               width,
+               (i-1)*height + bar->getHeight(),
+               width,
+               height,
+               TRUE);
 
   move_focus(1)();
   move_focus(-1)();
@@ -152,18 +162,28 @@ void spiral_impl() {
   static auto mainWidth = WINDOW_WIDTH / 2;
 
   showWndList->init();
-  moveWindow(showWndList->focusedW(), 0, 0, mainWidth, WINDOW_HEIGHT, TRUE);
+  moveWindow(showWndList->focusedW(),
+             0,
+             bar->getHeight(),
+             mainWidth,
+             WINDOW_HEIGHT - bar->getHeight(),
+             TRUE);
 
   auto width = WINDOW_WIDTH / 2;
-  auto height = WINDOW_HEIGHT;
+  auto height = WINDOW_HEIGHT - bar->getHeight();
   auto x = width;
-  auto y = 0;
+  auto y = bar->getHeight();
 
   for (auto i=1; i<length; ++i) {
     if (i != length - 1)
       (i % 2 == 0) ? width /= 2 : height /= 2;
 
-    moveWindow(showWndList->nextW(), x, y, width, height, TRUE);
+    moveWindow(showWndList->nextW(),
+               x,
+               y,
+               width,
+               height,
+               TRUE);
 
     (i % 2 == 0) ? x += width : y += height;
   }
@@ -180,7 +200,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       break;
     }
     case WM_MOUSEACTIVATE: {
-      HWND handle= reinterpret_cast<HWND>(wParam);
+      HWND handle = reinterpret_cast<HWND>(wParam);
       if (showWndList->focused() != handle) {
         showWndList->next();
         for (auto i=1; i<showWndList->length(); ++i) {
@@ -196,6 +216,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_APP: {
       if (lParam == HSHELL_WINDOWCREATED) {
         HWND handle = reinterpret_cast<HWND>(wParam);
+
+        wchar_t wbuf[32];
+        GetClassName(handle, wbuf, 32);
+        std::string str = convertUTF16toUTF8(wbuf, 32);
+        if (str == "WintileBarClass")
+          break;
 
         print(wParam);
         showWndList->emplace_front(handle, WindowState::NORMAL);
@@ -257,13 +283,14 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
     if (str == "")
       return TRUE;
 
-    print(str);
+    auto title = str;
 
     GetClassName(hWnd, wbuf, strMaxSize);
     str = convertUTF16toUTF8(wbuf, strMaxSize);
-    if (str == "Progman" || str == "MainWindowClass")
+    if (str == "Progman" || str == "WintileBarClass" || str == "MainWindowClass")
       return TRUE;
 
+    print(title);
     print(hWnd);
     print("");
 
@@ -276,6 +303,23 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
   return TRUE;
 }
 
+LRESULT CALLBACK BarWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  switch (msg) {
+    case WM_PAINT:
+      std::cout << "Bar's WM_PAINT" << std::endl;
+      HDC hdc;
+      PAINTSTRUCT ps;
+
+      hdc = BeginPaint(hWnd, &ps);
+      EndPaint(hWnd, &ps);
+      bar->paint();
+      break;
+    default:
+      return DefWindowProc(hWnd, msg, wParam, lParam);
+  }
+  return 0;
+}
+
 bool start_hook(const HINSTANCE hInst) {
   hookKey = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
 
@@ -283,6 +327,8 @@ bool start_hook(const HINSTANCE hInst) {
     print("hookKey is nullptr");
     return false;
   }
+
+  start_wnd_hook();
 
   return true;
 }
@@ -330,12 +376,18 @@ void create_window(const HINSTANCE hInstance) {
   if (RegisterClassEx(&wcex) == 0)
     return;
 
-  clientWnd = CreateWindowEx(0, className, TEXT("wintile"), 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInstance, nullptr);
+  clientWnd = CreateWindowEx(0,
+                             className,
+                             TEXT("wintile"),
+                             0,
+                             0, 0, 0, 0,
+                             HWND_MESSAGE,
+                             nullptr,
+                             hInstance,
+                             nullptr);
 
   if (clientWnd == nullptr)
     return;
-
-  start_wnd_hook(clientWnd);
 }
 
 void get_all_window() {
@@ -350,24 +402,38 @@ void get_all_window() {
   }
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-  MSG msg;
+void init(const HINSTANCE hInstance) {
+  RECT rect = { 0, bar->getHeight(), WINDOW_WIDTH, WINDOW_HEIGHT };
+  SystemParametersInfo(SPI_SETWORKAREA, 0, &rect, 0);
+
+  int elem[] = { COLOR_3DHILIGHT, COLOR_3DLIGHT, COLOR_3DDKSHADOW, COLOR_3DSHADOW };
+  COLORREF rgb[] = { RGB(0, 0, 0), RGB(0, 0, 0), RGB(0, 0, 0), RGB(0, 0, 0) };
+  SetSysColors(4, elem, rgb);
 
   create_window(hInstance);
+  bar->create(hInstance);
   hide_taskbar();
   get_all_window();
   layoutList->focused().arrange();
   start_hook(hInstance);
+}
 
+void cleanup() {
+  stop_hook();
+  stop_wnd_hook();
+  //show_taskbar();
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+  init(hInstance);
+
+  MSG msg;
   while (GetMessage(&msg, nullptr, 0, 0) > 0) {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
 
-  stop_hook();
-  stop_wnd_hook();
-
-  //show_taskbar();
+  cleanup();
 
   return msg.wParam;
 }

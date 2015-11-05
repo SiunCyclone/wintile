@@ -8,8 +8,6 @@
 HHOOK hookWnd __attribute__ ((section(".hook"))) = 0;
 HHOOK hookShell __attribute__ ((section(".hook"))) = 0;
 
-HWND clientWnd __attribute__ ((section(".client"))) = 0;
-
 HINSTANCE hInst;
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdReason, LPVOID lpReserved) {
@@ -59,10 +57,9 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(hookShell, code, wParam, lParam);
 }
 
-DLLAPI bool start_wnd_hook(HWND hWnd) {
+DLLAPI bool start_wnd_hook() {
   hookWnd = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProc, hInst, 0);
   hookShell = SetWindowsHookEx(WH_SHELL, ShellProc, hInst, 0);
-  clientWnd = hWnd;
 
   if (hookWnd == nullptr) {
     std::cout << "hookWnd is nullptr" << std::endl;
