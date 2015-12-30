@@ -241,6 +241,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (str == "WintileBarClass")
           break;
 
+        print("New Window has created");
         print(wParam);
         showWndList->emplace_front(handle, WindowState::NORMAL);
 
@@ -337,6 +338,7 @@ LRESULT CALLBACK BarWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     default:
       return DefWindowProc(hWnd, msg, wParam, lParam);
   }
+
   return 0;
 }
 

@@ -189,24 +189,13 @@ class Desktop final {
   private:
     void save_restore_impl(std::string type) {
       if (_showWndList->length() > 0) {
-        auto rect = _showWndList->focusedW().getRect();
-        std::function<int()> left;
-        std::function<int()> top;
-
         if (type == "save") {
-          left = [&] { return WINDOW_WIDTH + rect.left; };
-          top = [&] { return WINDOW_HEIGHT + rect.top; };
+          for (auto i=0; i<_showWndList->length(); ++i)
+            ShowWindow(_showWndList->next(), SW_MINIMIZE);
         } else if (type == "restore") {
-          left = [&] { return rect.left; };
-          top = [&] { return rect.top; };
+          for (auto i=0; i<_showWndList->length(); ++i)
+            ShowWindow(_showWndList->next(), SW_RESTORE);
         }
-
-        for (auto i=0; i<_showWndList->length(); ++i) {
-          SetWindowPos(_showWndList->focused(), 0, left(), top(), 0, 0, SWP_NOSIZE);
-          rect = _showWndList->nextW().getRect();
-        }
-
-        move_focus(0)();
       }
     }
 
