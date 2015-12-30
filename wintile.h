@@ -2,6 +2,7 @@
 #define WINTILE_H
 
 #include <array>
+#include <exception>
 #include <functional>
 #include <list>
 #include <map>
@@ -23,7 +24,8 @@ stdfunc move_focus(const int);
 stdfunc swap_window(const int);
 stdfunc transfer_window(const int);
 stdfunc open_app(const wchar_t*);
-void maximize();
+void switch_maximum();
+void switch_float();
 void destroy_window();
 void call_next_layout();
 void call_prev_layout();
@@ -37,8 +39,8 @@ LRESULT CALLBACK LLKeyboardProc(int, WPARAM, LPARAM);
 BOOL CALLBACK EnumWndProc(HWND, LPARAM);
 LRESULT CALLBACK BarWndProc(HWND, UINT, WPARAM, LPARAM);
 
-bool start_hook(const HINSTANCE);
-bool stop_hook();
+void start_hook(const HINSTANCE);
+void stop_hook();
 void show_taskbar();
 void hide_taskbar();
 void create_window(const HINSTANCE);
@@ -64,6 +66,11 @@ R& prev_itr_cir(Itr& itr, List& list) {
 }
 
 /* class implementations */
+class win32api_error : public std::runtime_error {
+  public:
+    using runtime_error::runtime_error;
+};
+
 enum struct WindowState {
   NORMAL,
   ICON,
@@ -356,7 +363,8 @@ std::map<unsigned int, stdfunc> callFunc = {
   { '9',        func_switcher( deskList->swap_desktop(8),  transfer_window(8)     )},
   { 'A',                       swap_window(0)                                      },
   { 'I',                       open_app(browserPath)                               },
-  { 'M',                       maximize                                            },
+  { 'M',                       switch_maximum                                      },
+  { 'F',                       switch_float                                        },
   { 'Q',                       quit                                                }
 };
 

@@ -17,15 +17,15 @@ wndhook.dll: wndhookdll.o
 wndhookdll.o: wndhookdll.cc wndhookdll.h
 	$(CC) $(CFLAGS) -c $<
 
-debug: wintile.cc wndhookdll.cc wintile.h wndhookdll.h
+debug: wintile.o wndhook.dll
 	$(CC) $(CFLAGS) -S -g wintile.cc wndhookdll.cc
 	$(CC) $(CFLAGS) -c -g wintile.cc wndhookdll.cc
 	$(CC) $(CFLAGS) -shared wndhookdll.o -o wndhook.dll
 	$(CC) $(CFLAGS) -L./ -lwndhook wintile.o -o $(EXE) -mwindows
 
-release: wintile.cc wndhookdll.cc wintile.h wndhookdll.h
-	$(CC) $(CFLAGS) -shared -O2 -s wndhookdll.cc -o wndhook.dll
-	$(CC) $(CFLAGS) -L./ -lwndhook -O2 -s wintile.cc -o $(EXE) -mwindows
+release: wintile.o wndhook.dll
+	$(CC) $(CFLAGS) -shared -s -DNDEBUG wndhookdll.o -o wndhook.dll
+	$(CC) $(CFLAGS) -L./ -lwndhook -s -DNDEBUG wintile.cc -o $(EXE) -mwindows
 
 .PHONY: clean
 clean:

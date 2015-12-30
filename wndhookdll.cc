@@ -61,13 +61,13 @@ DLLAPI bool start_wnd_hook() {
   hookWnd = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProc, hInst, 0);
   hookShell = SetWindowsHookEx(WH_SHELL, ShellProc, hInst, 0);
 
-  if (hookWnd == nullptr) {
-    std::cout << "hookWnd is nullptr" << std::endl;
+  if (hookWnd == NULL) {
+    std::cout << "hookWnd is NULL" << std::endl;
     return false;
   }
 
-  if (hookShell == nullptr) {
-    std::cout << "hookShell is nullptr" << std::endl;
+  if (hookShell == NULL) {
+    std::cout << "hookShell is NULL" << std::endl;
     return false;
   }
 
@@ -76,12 +76,12 @@ DLLAPI bool start_wnd_hook() {
 
 DLLAPI bool stop_wnd_hook() {
   if (UnhookWindowsHookEx(hookWnd) == 0) {
-    std::cout << "Unhook hookWnd is failed" << std::endl;
+    std::cout << "Failed to unhook hookWnd" << std::endl;
     return false;
   }
 
   if (UnhookWindowsHookEx(hookShell) == 0) {
-    std::cout << "Unhook hookShell is failed" << std::endl;
+    std::cout << "Failed to unhook hookShell" << std::endl;
     return false;
   }
 

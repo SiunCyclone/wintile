@@ -1,6 +1,7 @@
 #define UNICODE
 
 #include <functional>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -93,11 +94,11 @@ stdfunc transfer_window(const int dist) {
 
 stdfunc open_app(const wchar_t* path) {
   return [=] {
-    ShellExecute(nullptr, L"open", path, nullptr, nullptr, SW_HIDE);
+    ShellExecute(NULL, L"open", path, NULL, NULL, SW_HIDE);
   };
 }
 
-void maximize() {
+void switch_maximum() {
   if (showWndList->length() > 0) {
     static WindowState prevState;
 
@@ -108,6 +109,22 @@ void maximize() {
       prevState = showWndList->focusedW().getState();
       ShowWindow(showWndList->focused(), SW_MAXIMIZE);
       showWndList->focusedW().setState(WindowState::MAXIMUM);
+    }
+  }
+}
+
+void switch_float() {
+  if (showWndList->length() > 0) {
+    static WindowState prevState;
+
+    if (showWndList->focusedW().getState() == WindowState::FLOAT) {
+      //ShowWindow(showWndList->focused(), SW_RESTORE);
+      showWndList->focusedW().setState(prevState);
+    } else {
+      prevState = showWndList->focusedW().getState();
+      if (MoveWindow(showWndList->focused(), 100, 100, 800, 600, TRUE) == 0)
+        throw win32api_error("Exception: MoveWindow()");
+      showWndList->focusedW().setState(WindowState::FLOAT);
     }
   }
 }
@@ -218,7 +235,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         HWND handle = reinterpret_cast<HWND>(wParam);
 
         wchar_t wbuf[32];
-        GetClassName(handle, wbuf, 32);
+        if (GetClassName(hWnd, wbuf, 32) == 0)
+          throw win32api_error("Error: GetClassName()");
         std::string str = convertUTF16toUTF8(wbuf, 32);
         if (str == "WintileBarClass")
           break;
@@ -226,9 +244,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         print(wParam);
         showWndList->emplace_front(handle, WindowState::NORMAL);
 
-        auto fromId = GetWindowThreadProcessId(handle, nullptr);
+        auto fromId = GetWindowThreadProcessId(handle, NULL);
         auto toId = GetCurrentThreadId();
-        AttachThreadInput(fromId, toId, TRUE);
+        if (AttachThreadInput(fromId, toId, TRUE) == 0)
+          throw win32api_error("Exception: AttachThreadInput()");
 
         layoutList->focused().arrange();
 
@@ -285,7 +304,8 @@ BOOL CALLBACK EnumWndProc(HWND hWnd, LPARAM lParam) {
 
     auto title = str;
 
-    GetClassName(hWnd, wbuf, strMaxSize);
+    if (GetClassName(hWnd, wbuf, strMaxSize) == 0)
+      throw win32api_error("Error: GetClassName()");
     str = convertUTF16toUTF8(wbuf, strMaxSize);
     if (str == "Progman" || str == "WintileBarClass" || str == "MainWindowClass")
       return TRUE;
@@ -320,45 +340,39 @@ LRESULT CALLBACK BarWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   return 0;
 }
 
-bool start_hook(const HINSTANCE hInst) {
+void start_hook(const HINSTANCE hInst) {
   hookKey = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInst, 0);
 
-  if (hookKey == nullptr) {
-    print("hookKey is nullptr");
-    return false;
-  }
+  if (hookKey == NULL)
+    throw win32api_error("Error: SetWindowsHookEx()");
 
   start_wnd_hook();
-
-  return true;
 }
 
-bool stop_hook() {
-  if (UnhookWindowsHookEx(hookKey) == 0) {
-    print("Unhook hookKey is failed");
-    return false;
-  }
+void stop_hook() {
+  stop_wnd_hook();
 
-  return true;
+  if (UnhookWindowsHookEx(hookKey) == 0)
+    throw win32api_error("Error: UnhookWindowsHookEx()");
 }
 
 void show_taskbar() {
-  HWND hTaskBar = FindWindow(TEXT("Shell_TrayWnd"), nullptr);
-  HWND hStart = FindWindow(TEXT("Button"), nullptr);
+  HWND hTaskBar = FindWindow(L"Shell_TrayWnd", NULL);
+  HWND hStart = FindWindow(L"Button", NULL);
   ShowWindow(hTaskBar, SW_SHOW);
   ShowWindow(hStart, SW_SHOW);
 }
 
 void hide_taskbar() {
-  HWND hTaskBar = FindWindow(TEXT("Shell_TrayWnd"), nullptr);
-  HWND hStart = FindWindow(TEXT("Button"), nullptr);
+  HWND hTaskBar = FindWindow(L"Shell_TrayWnd", NULL);
+  HWND hStart = FindWindow(L"Button", NULL);
   ShowWindow(hTaskBar, SW_HIDE);
   ShowWindow(hStart, SW_HIDE);
 }
 
 void create_window(const HINSTANCE hInstance) {
   WNDCLASSEX wcex;
-  auto className = TEXT("WintileClass");
+  auto className = L"WintileClass";
 
   wcex.cbSize = sizeof(WNDCLASSEX);
   wcex.style = 0;
@@ -366,49 +380,55 @@ void create_window(const HINSTANCE hInstance) {
   wcex.cbClsExtra = 0;
   wcex.cbWndExtra = 0;
   wcex.hInstance = hInstance;
-  wcex.hIcon = nullptr;
-  wcex.hCursor = nullptr;
-  wcex.hbrBackground = nullptr;
-  wcex.lpszMenuName = nullptr;
+  wcex.hIcon = NULL;
+  wcex.hCursor = NULL;
+  wcex.hbrBackground = NULL;
+  wcex.lpszMenuName = NULL;
   wcex.lpszClassName = className;
-  wcex.hIconSm = nullptr;
+  wcex.hIconSm = NULL;
 
-  if (RegisterClassEx(&wcex) == 0)
-    return;
+  if (RegisterClassEx(&wcex) == FALSE)
+    throw win32api_error("Error: RegisterClassEx()");
 
   clientWnd = CreateWindowEx(0,
                              className,
-                             TEXT("wintile"),
+                             L"wintile",
                              0,
                              0, 0, 0, 0,
                              HWND_MESSAGE,
-                             nullptr,
+                             NULL,
                              hInstance,
-                             nullptr);
+                             NULL);
 
-  if (clientWnd == nullptr)
-    return;
+  if (clientWnd == NULL)
+    throw win32api_error("Error: CreateWindowEx()");
 }
 
 void get_all_window() {
-  EnumWindows(EnumWndProc, (LPARAM)nullptr);
+  if (EnumWindows(EnumWndProc, (LPARAM)NULL) == FALSE)
+    throw win32api_error("Error: EnumWindows()");
 
   showWndList->init();
   for (auto i=0; i<showWndList->length(); ++i) {
     auto handle = (i == 0) ? showWndList->focused() : showWndList->next();
-    auto fromId = GetWindowThreadProcessId(handle, nullptr);
+    auto fromId = GetWindowThreadProcessId(handle, NULL);
     auto toId = GetCurrentThreadId();
-    AttachThreadInput(fromId, toId, TRUE);
+    if (AttachThreadInput(fromId, toId, TRUE) == 0)
+      throw win32api_error("Exception: AttachThreadInput()");
   }
 }
 
 void init(const HINSTANCE hInstance) {
   RECT rect = { 0, bar->getHeight(), WINDOW_WIDTH, WINDOW_HEIGHT };
-  SystemParametersInfo(SPI_SETWORKAREA, 0, &rect, 0);
 
   int elem[] = { COLOR_3DHILIGHT, COLOR_3DLIGHT, COLOR_3DDKSHADOW, COLOR_3DSHADOW };
   COLORREF rgb[] = { RGB(0, 0, 0), RGB(0, 0, 0), RGB(0, 0, 0), RGB(0, 0, 0) };
-  SetSysColors(4, elem, rgb);
+
+  if (SystemParametersInfo(SPI_SETWORKAREA, 0, &rect, 0) == FALSE)
+    throw win32api_error("Error: SystemParametersInfo()");
+
+  if (SetSysColors(4, elem, rgb) == FALSE)
+    throw win32api_error("Error: SetSysColors()");
 
   create_window(hInstance);
   bar->create(hInstance);
@@ -421,17 +441,32 @@ void init(const HINSTANCE hInstance) {
 
 void cleanup() {
   stop_hook();
-  stop_wnd_hook();
   //show_taskbar();
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-  init(hInstance);
-
   MSG msg;
-  while (GetMessage(&msg, nullptr, 0, 0) > 0) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+  BOOL loop = TRUE;
+
+  try {
+    init(hInstance);
+
+    while ((loop = GetMessage(&msg, NULL, 0, 0)) != FALSE) {
+      if (loop == -1)
+        throw win32api_error("Error: GetMessage()");
+
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
+  }
+
+  catch (const win32api_error& e) {
+    std::cerr << e.what() << std::endl;
+    std::cerr << "Error Code: " << GetLastError() << std::endl;
+  }
+
+  catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
   }
 
   cleanup();
