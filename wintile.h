@@ -110,11 +110,13 @@ class WindowList final {
       SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_THICKFRAME);
       _list.emplace_front(hWnd, state);
       ++_length;
+      init();
     }
     void emplace_back(const HWND& hWnd, const WindowState& state) {
       SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_THICKFRAME);
       _list.emplace_back(hWnd, state);
       ++_length;
+      init();
     }
     void insert(const Window& window) {
       SetWindowLongPtr(window.getHandle(), GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_THICKFRAME);

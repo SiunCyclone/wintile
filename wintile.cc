@@ -86,7 +86,6 @@ stdfunc transfer_window(const int dist) {
       layoutList->focused().arrange();
 
       deskList->at(dist)->getShowWndList()->emplace_front(hWnd, WindowState::NORMAL);
-      deskList->at(dist)->getShowWndList()->init();
       ShowWindow(hWnd, SW_MINIMIZE);
     }
   };
@@ -410,7 +409,6 @@ void get_all_window() {
   if (EnumWindows(EnumWndProc, (LPARAM)NULL) == FALSE)
     throw win32api_error("Error: EnumWindows()");
 
-  showWndList->init();
   for (auto i=0; i<showWndList->length(); ++i) {
     auto handle = (i == 0) ? showWndList->focused() : showWndList->next();
     auto fromId = GetWindowThreadProcessId(handle, NULL);
