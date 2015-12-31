@@ -2,6 +2,7 @@
 #define WINTILE_H
 
 #include <array>
+#include <cassert>
 #include <exception>
 #include <functional>
 #include <list>
@@ -301,6 +302,10 @@ class DesktopList final {
         _list[i] = std::make_shared<Desktop>(i);
     }
     std::shared_ptr<Desktop> focused() { return _list[_index]; }
+    std::shared_ptr<Desktop> at(int index) {
+      assert(index >= 0 && index < _length && "Out of range: index");
+      return _list[index];
+    }
     stdfunc swap_desktop(int index) {
       return [=] {
         if ((_index - index) != 0) {
@@ -312,6 +317,7 @@ class DesktopList final {
           update_alias_list();
 
           focused()->restore();
+          focused()->getLayoutList()->focused().arrange();
         }
       };
     }

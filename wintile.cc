@@ -85,9 +85,9 @@ stdfunc transfer_window(const int dist) {
       showWndList->prev();
       layoutList->focused().arrange();
 
-      deskList->swap_desktop(dist)();
-      showWndList->emplace_front(hWnd, WindowState::NORMAL);
-      layoutList->focused().arrange();
+      deskList->at(dist)->getShowWndList()->emplace_front(hWnd, WindowState::NORMAL);
+      deskList->at(dist)->getShowWndList()->init();
+      ShowWindow(hWnd, SW_MINIMIZE);
     }
   };
 }
