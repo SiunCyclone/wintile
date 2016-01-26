@@ -30,13 +30,13 @@ LRESULT CALLBACK CallWndProc(int code, WPARAM wParam, LPARAM lParam) {
     LPARAM lP = tmp->lParam;
 
     if (message == WM_CLOSE) {
-      auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+      auto hwndTarget = FindWindow(L"WintileClass", NULL);
       if (hwndTarget != NULL)
         PostMessage(hwndTarget, WM_APP, wP, message);
     }
 
     if (message == WM_MOUSEACTIVATE) {
-      auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+      auto hwndTarget = FindWindow(L"WintileClass", NULL);
       if (hwndTarget != NULL)
         PostMessage(hwndTarget, WM_MOUSEACTIVATE, wP, lP);
     }
@@ -49,7 +49,7 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
   if (code < 0)
     return CallNextHookEx(hookShell, code, wParam, lParam);
   else if (code == HSHELL_WINDOWCREATED) {
-    auto hwndTarget = FindWindow(TEXT("WintileClass"), NULL);
+    auto hwndTarget = FindWindow(L"WintileClass", NULL);
     if (hwndTarget != NULL)
       PostMessage(hwndTarget, WM_APP, wParam, code);
   }
