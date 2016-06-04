@@ -441,7 +441,7 @@ void init(const HINSTANCE hInstance) {
 
 void cleanup() {
   stop_hook();
-  //show_taskbar();
+  show_taskbar();
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
