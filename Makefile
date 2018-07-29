@@ -1,31 +1,33 @@
-CC = clang++
-CFLAGS = -Wall -std=c++11
+CXX = g++
+CXXFLAGS = -Wall -std=c++11
+LDFLAGS = -static -lstdc++ -lgcc -lwinpthread
+WNDFLAGS = -Wl,-Bdynamic -lwndhook
 EXE = wintile.exe
 
 .PHONY: all
 all: $(EXE)
 
 wintile.exe: wintile.o wndhook.dll
-	$(CC) $(CFLAGS) -L./ -lwndhook $< -o $@ -mwindows
+	$(CXX) $(CXXFLAGS) $< -o $@ -mwindows $(LDFLAGS) -L./ $(WNDFLAGS)
 
 wintile.o: wintile.cc wintile.h wndhookdll.h
-	$(CC) $(CFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 wndhook.dll: wndhookdll.o
-	$(CC) $(CFLAGS) -shared $< -o $@
+	$(CXX) $(CXXFLAGS) -shared $< -o $@ $(LDFLAGS)
 
 wndhookdll.o: wndhookdll.cc wndhookdll.h
-	$(CC) $(CFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 debug: wintile.o wndhook.dll
-	$(CC) $(CFLAGS) -S -g wintile.cc wndhookdll.cc
-	$(CC) $(CFLAGS) -c -g wintile.cc wndhookdll.cc
-	$(CC) $(CFLAGS) -shared wndhookdll.o -o wndhook.dll
-	$(CC) $(CFLAGS) -L./ -lwndhook wintile.o -o $(EXE) -mwindows
+	$(CXX) $(CXXFLAGS) -S -g wintile.cc wndhookdll.cc
+	$(CXX) $(CXXFLAGS) -c -g wintile.cc wndhookdll.cc
+	$(CXX) $(CXXFLAGS) -shared wndhookdll.o -o wndhook.dll
+	$(CXX) $(CXXFLAGS) -L./ -lwndhook wintile.o -o $(EXE) -mwindows
 
 release: wintile.o wndhook.dll
-	$(CC) $(CFLAGS) -shared -s -DNDEBUG wndhookdll.o -o wndhook.dll
-	$(CC) $(CFLAGS) -L./ -lwndhook -s -DNDEBUG wintile.cc -o $(EXE) -mwindows
+	$(CXX) $(CXXFLAGS) -shared -s -DNDEBUG wndhookdll.o -o wndhook.dll
+	$(CXX) $(CXXFLAGS) -L./ -lwndhook -s -DNDEBUG wintile.cc -o $(EXE) -mwindows
 
 .PHONY: clean
 clean:
