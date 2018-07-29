@@ -341,7 +341,7 @@ std::map<unsigned int, bool> isPressed = {
   { SUBMODKEY,  false }
 };
 
-wchar_t terminalPath[256] = L"\"C:/msys32/msys2_shell.bat\"";
+wchar_t terminalPath[256] = L"\"C:/msys64/mingw64.exe\"";
 wchar_t browserPath[256] = L"\"C:/Program Files/Mozilla Firefox/firefox.exe\"";
 std::map<unsigned int, stdfunc> callFunc = {
   { 'J',        func_switcher( move_focus(1),              swap_window(1)         )},

@@ -433,7 +433,7 @@ void init(const HINSTANCE hInstance) {
   create_window(hInstance);
   bar->create(hInstance);
   bar->paint(desktop);
-  hide_taskbar();
+  //hide_taskbar();
   get_all_window();
   layoutList->focused().arrange();
   start_hook(hInstance);
