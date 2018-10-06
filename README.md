@@ -2,6 +2,8 @@
 
 Wintile is a tiling window manager for windows.
 
+<img src="https://i.imgur.com/inFT801.png" width="500">  
+
 ### Features
 * Simple keyboard manipulation
 * Easily Customize config
